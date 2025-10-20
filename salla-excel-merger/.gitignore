@@ -13,6 +13,7 @@ dist
 dist-ssr
 dist-electron
 release
+out
 *.local
 
 # Editor directories and files
@@ -28,3 +29,7 @@ release
 
 # Environment variables
 .env
+
+# Build artifacts
+*.tgz
+.eslintcache
