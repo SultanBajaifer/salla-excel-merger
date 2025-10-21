@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAppStore } from './store/useAppStore'
+import { useAppStore, type CellValue } from './store/useAppStore'
 import FileSelector from './components/FileSelector'
 import PreviewTable from './components/PreviewTable'
 import ColumnMapper from './components/ColumnMapper'
@@ -26,7 +26,7 @@ function App(): React.JSX.Element {
       if (filePath) {
         setMainFilePath(filePath)
         // Read the file
-        const data = await window.api.readExcelFile(filePath)
+        const data = (await window.api.readExcelFile(filePath)) as CellValue[][]
         setMainFileData(data)
       }
     } catch (error) {
@@ -41,7 +41,7 @@ function App(): React.JSX.Element {
       if (filePath) {
         setNewProductsFilePath(filePath)
         // Read the file
-        const data = await window.api.readExcelFile(filePath)
+        const data = (await window.api.readExcelFile(filePath)) as CellValue[][]
         setNewProductsData(data)
       }
     } catch (error) {
@@ -64,10 +64,10 @@ function App(): React.JSX.Element {
         alert('لم يتم تحديد مسار الملف الرئيسي')
         return
       }
-      
+
       const dir = mainFilePath.substring(0, mainFilePath.lastIndexOf('\\'))
       const defaultPath = `${dir}\\الملف_الرئيسي_محدث.xlsx`
-      
+
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
         await window.api.saveExcelFile(outputPath, mergedPreviewData)
@@ -84,12 +84,8 @@ function App(): React.JSX.Element {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            دمج ملفات Excel لمتجر سلة
-          </h1>
-          <p className="text-gray-600 mb-8">
-            اختر ملفات Excel للدمج ومعاينة البيانات
-          </p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">دمج ملفات Excel لمتجر سلة</h1>
+          <p className="text-gray-600 mb-8">اختر ملفات Excel للدمج ومعاينة البيانات</p>
 
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <FileSelector

@@ -3,13 +3,8 @@ import { useAppStore } from '../store/useAppStore'
 import type { CellValue } from '../store/useAppStore'
 
 const ColumnMapper: React.FC = () => {
-  const { 
-    newProductsData, 
-    mainFileData, 
-    setCurrentView, 
-    setColumnMappings, 
-    setMergedPreviewData 
-  } = useAppStore()
+  const { newProductsData, mainFileData, setCurrentView, setColumnMappings, setMergedPreviewData } =
+    useAppStore()
 
   // Extract column headers
   const newColumns = (newProductsData[0] || []).map((col) => String(col))
@@ -29,18 +24,18 @@ const ColumnMapper: React.FC = () => {
   const handlePreview = (): void => {
     // Create merged data
     const mergedData: CellValue[][] = []
-    
+
     // Add header row
     mergedData.push(mainColumns)
-    
+
     // Process each row from new products
     const newRows = newProductsData.slice(1)
     newRows.forEach((newRow) => {
       const mergedRow: CellValue[] = []
-      
+
       mainColumns.forEach((mainCol) => {
         const mapping = mappings[mainCol]
-        
+
         if (mapping === 'manual') {
           // Use manual value
           mergedRow.push(manualValues[mainCol] || '')
@@ -57,17 +52,17 @@ const ColumnMapper: React.FC = () => {
           mergedRow.push('')
         }
       })
-      
+
       mergedData.push(mergedRow)
     })
-    
+
     // Save mappings and preview data
     const columnMappings = Object.entries(mappings).map(([mainCol, newCol]) => ({
       mainColumn: mainCol,
       newColumn: newCol === 'manual' ? null : newCol,
       manualValue: newCol === 'manual' ? manualValues[mainCol] : undefined
     }))
-    
+
     setColumnMappings(columnMappings)
     setMergedPreviewData(mergedData)
     setCurrentView('preview')

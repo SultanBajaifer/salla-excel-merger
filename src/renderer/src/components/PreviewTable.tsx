@@ -43,7 +43,10 @@ const PreviewTable: React.FC<PreviewTableProps> = ({ data, title, maxRows = 5 })
             {rows.map((row: CellValue[], rowIdx: number) => (
               <tr key={rowIdx} className="hover:bg-gray-50">
                 {row.map((cell: CellValue, cellIdx: number) => (
-                  <td key={cellIdx} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap text-right">
+                  <td
+                    key={cellIdx}
+                    className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap text-right"
+                  >
                     {String(cell)}
                   </td>
                 ))}

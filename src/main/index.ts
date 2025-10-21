@@ -63,26 +63,24 @@ app.whenReady().then(() => {
         { name: 'جميع الملفات', extensions: ['*'] }
       ]
     })
-    
+
     if (result.canceled) {
       return null
     }
-    
+
     return result.filePaths[0]
   })
 
   ipcMain.handle('save-file', async (_, defaultPath: string) => {
     const result = await dialog.showSaveDialog({
       defaultPath,
-      filters: [
-        { name: 'ملفات Excel', extensions: ['xlsx'] }
-      ]
+      filters: [{ name: 'ملفات Excel', extensions: ['xlsx'] }]
     })
-    
+
     if (result.canceled) {
       return null
     }
-    
+
     return result.filePath
   })
 
@@ -91,13 +89,13 @@ app.whenReady().then(() => {
     try {
       const workbook = new ExcelJS.Workbook()
       await workbook.xlsx.readFile(filePath)
-      
+
       const worksheet = workbook.worksheets[0]
-      const data: any[][] = []
-      
+      const data: unknown[][] = []
+
       // Read all rows
       worksheet.eachRow((row) => {
-        const rowData: any[] = []
+        const rowData: unknown[] = []
         row.eachCell({ includeEmpty: true }, (cell) => {
           const value = cell.value
           if (
@@ -115,7 +113,7 @@ app.whenReady().then(() => {
         })
         data.push(rowData)
       })
-      
+
       return data
     } catch (error) {
       console.error('Error reading Excel file:', error)
@@ -124,16 +122,16 @@ app.whenReady().then(() => {
   })
 
   // Excel file saving handler
-  ipcMain.handle('save-excel-file', async (_, filePath: string, data: any[][]) => {
+  ipcMain.handle('save-excel-file', async (_, filePath: string, data: unknown[][]) => {
     try {
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet('البيانات المدمجة')
-      
+
       // Add data to worksheet
       data.forEach((row) => {
         worksheet.addRow(row)
       })
-      
+
       // Auto-size columns
       worksheet.columns.forEach((column) => {
         let maxLength = 0
@@ -145,7 +143,7 @@ app.whenReady().then(() => {
         })
         column.width = maxLength < 10 ? 10 : maxLength + 2
       })
-      
+
       // Save the file
       await workbook.xlsx.writeFile(filePath)
       console.log('File saved successfully:', filePath)
