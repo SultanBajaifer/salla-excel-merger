@@ -75,7 +75,9 @@ function App(): React.JSX.Element {
       const dir = sepIndex !== -1 ? mainFilePath.substring(0, sepIndex) : ''
       const useBackslash = mainFilePath.includes('\\')
       const separator = useBackslash ? '\\' : '/'
-      const defaultPath = dir ? `${dir}${separator}الملف_الرئيسي_محدث.xlsx` : `الملف_الرئيسي_محدث.xlsx`
+      const defaultPath = dir
+        ? `${dir}${separator}الملف_الرئيسي_محدث.xlsx`
+        : `الملف_الرئيسي_محدث.xlsx`
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
