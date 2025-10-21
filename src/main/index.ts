@@ -126,64 +126,117 @@ app.whenReady().then(() => {
     'save-excel-file',
     async (_, filePath: string, data: unknown[][], mainFilePath: string) => {
       try {
-        // Read the original main file to preserve formatting
-        const originalWorkbook = new ExcelJS.Workbook()
-        await originalWorkbook.xlsx.readFile(mainFilePath)
-        const originalWorksheet = originalWorkbook.worksheets[0]
-
-        // Create new workbook with same structure
-        const workbook = new ExcelJS.Workbook()
-        const worksheet = workbook.addWorksheet(originalWorksheet.name || 'البيانات المدمجة')
-
-        // Copy column widths from original
-        originalWorksheet.columns.forEach((col, index) => {
-          if (worksheet.columns[index]) {
-            worksheet.columns[index].width = col.width
+        // Try to read the original main file to preserve formatting; if it fails or has no sheets, proceed without template
+        let originalWorksheet: ExcelJS.Worksheet | undefined
+        if (mainFilePath) {
+          try {
+            const originalWorkbook = new ExcelJS.Workbook()
+            await originalWorkbook.xlsx.readFile(mainFilePath)
+            originalWorksheet = originalWorkbook.worksheets[0]
+          } catch (err) {
+            console.warn('Could not read original workbook, proceeding without template formatting:', err)
+            originalWorksheet = undefined
           }
-        })
+        }
+
+        // Create new workbook with same structure (use original name if available)
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet(originalWorksheet?.name || 'البيانات المدمجة')
+
+        // Copy column widths from original if available
+        if (originalWorksheet && Array.isArray(originalWorksheet.columns) && originalWorksheet.columns.length > 0) {
+          originalWorksheet.columns.forEach((col, index) => {
+            // ensure the target column exists
+            worksheet.getColumn(index + 1)
+            if (worksheet.columns[index]) {
+              worksheet.columns[index].width = col.width
+            }
+          })
+        }
 
         // Add all data rows
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Copy formatting from original worksheet for title row (row 0) and header row (row 1)
-          if (rowIndex === 0 || rowIndex === 1) {
+          // Copy formatting from original worksheet for title row (row 0) and header row (row 1) only if originalWorksheet exists
+          if (originalWorksheet && (rowIndex === 0 || rowIndex === 1)) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
+            if (originalRow) {
+              // Copy row height
+              newRow.height = originalRow.height
 
-            // Copy row height
-            newRow.height = originalRow.height
+              // Copy cell formatting
+              newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                const originalCell = originalRow.getCell(colNumber)
+                if (!originalCell) return
 
-            // Copy cell formatting
-            newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-              const originalCell = originalRow.getCell(colNumber)
+                // Copy font
+                if (originalCell.font) {
+                  cell.font = { ...originalCell.font }
+                }
 
-              // Copy font
-              if (originalCell.font) {
-                cell.font = { ...originalCell.font }
-              }
+                // Copy fill
+                if (originalCell.fill) {
+                  cell.fill = { ...originalCell.fill }
+                }
 
-              // Copy fill
-              if (originalCell.fill) {
-                cell.fill = { ...originalCell.fill }
-              }
+                // Copy border
+                if (originalCell.border) {
+                  cell.border = { ...originalCell.border }
+                }
 
-              // Copy border
-              if (originalCell.border) {
-                cell.border = { ...originalCell.border }
-              }
+                // Copy alignment
+                if (originalCell.alignment) {
+                  cell.alignment = { ...originalCell.alignment }
+                }
 
-              // Copy alignment
-              if (originalCell.alignment) {
-                cell.alignment = { ...originalCell.alignment }
-              }
-
-              // Copy number format
-              if (originalCell.numFmt) {
-                cell.numFmt = originalCell.numFmt
-              }
-            })
+                // Copy number format
+                if (originalCell.numFmt) {
+                  cell.numFmt = originalCell.numFmt
+                }
+              })
+            }
           }
         })
+
+        // Merge the first row across all used columns and center its text
+        const firstRowIndex = 1
+        const totalCols = Math.max(worksheet.columnCount, data[0]?.length ?? 1)
+
+        // Ensure first row exists
+        const firstRow = worksheet.getRow(firstRowIndex)
+
+        // Determine the title value (prefer existing cell value, fall back to first data item or empty string)
+        const existingValues = firstRow.values as unknown[] // ExcelJS stores values with 1-based index
+        const titleValue = (existingValues?.[1] ?? data[0]?.[0] ?? '') as ExcelJS.CellValue
+
+        // Clear other cells in the first row so merge is clean
+        for (let c = 2; c <= totalCols; c++) {
+          firstRow.getCell(c).value = null
+          firstRow.getCell(c).style = {}
+        }
+
+        // Set the top-left cell value before merging
+        firstRow.getCell(1).value = titleValue
+
+        // Merge only if there's more than one column
+        if (totalCols > 1) {
+          worksheet.mergeCells(firstRowIndex, 1, firstRowIndex, totalCols)
+        }
+
+        const titleCell = worksheet.getCell(firstRowIndex, 1)
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+
+        // Preserve some original styling for the merged title cell if available
+        if (originalWorksheet) {
+          const origFirstCell = originalWorksheet.getRow(1)?.getCell(1)
+          if (origFirstCell) {
+            if (origFirstCell.font) titleCell.font = { ...origFirstCell.font }
+            if (origFirstCell.fill) titleCell.fill = { ...origFirstCell.fill }
+            if (origFirstCell.border) titleCell.border = { ...origFirstCell.border }
+            if (origFirstCell.alignment) titleCell.alignment = { ...titleCell.alignment, ...origFirstCell.alignment }
+          }
+        }
 
         // Apply RTL to worksheet
         worksheet.views = [{ rightToLeft: true }]

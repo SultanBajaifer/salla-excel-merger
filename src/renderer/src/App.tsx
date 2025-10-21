@@ -65,8 +65,17 @@ function App(): React.JSX.Element {
         return
       }
 
-      const dir = mainFilePath.substring(0, mainFilePath.lastIndexOf('\\'))
-      const defaultPath = `${dir}\\الملف_الرئيسي_محدث.xlsx`
+      if (!mergedPreviewData || !mergedPreviewData.length) {
+        alert('لا توجد بيانات لحفظها. يرجى إنشاء معاينة الدمج أولاً')
+        return
+      }
+
+      // Support both Windows and POSIX path separators
+      const sepIndex = Math.max(mainFilePath.lastIndexOf('\\'), mainFilePath.lastIndexOf('/'))
+      const dir = sepIndex !== -1 ? mainFilePath.substring(0, sepIndex) : ''
+      const useBackslash = mainFilePath.includes('\\')
+      const separator = useBackslash ? '\\' : '/'
+      const defaultPath = dir ? `${dir}${separator}الملف_الرئيسي_محدث.xlsx` : `الملف_الرئيسي_محدث.xlsx`
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
