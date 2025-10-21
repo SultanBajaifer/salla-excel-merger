@@ -70,7 +70,7 @@ function App(): React.JSX.Element {
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
-        await window.api.saveExcelFile(outputPath, mergedPreviewData)
+        await window.api.saveExcelFile(outputPath, mergedPreviewData, mainFilePath)
         alert('تم حفظ الملف بنجاح')
       }
     } catch (error) {
@@ -101,7 +101,14 @@ function App(): React.JSX.Element {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <PreviewTable data={mainFileData} title="معاينة الملف الرئيسي" maxRows={5} />
+            <div>
+              <PreviewTable data={mainFileData} title="معاينة الملف الرئيسي" maxRows={5} />
+              {mainFileData.length > 0 && (
+                <p className="text-xs text-gray-500 mt-2 bg-yellow-50 p-2 rounded border border-yellow-200">
+                  ملاحظة: الصف الأول هو صف العنوان وسيتم الحفاظ عليه في الملف النهائي
+                </p>
+              )}
+            </div>
             <PreviewTable data={newProductsData} title="معاينة المنتجات الجديدة" maxRows={5} />
           </div>
 

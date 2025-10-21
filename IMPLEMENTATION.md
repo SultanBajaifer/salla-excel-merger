@@ -86,7 +86,7 @@ ipcMain.handle('save-excel-file', async (_, filePath: string, data: unknown[][])
 const handlePreview = () => {
   const mergedData: CellValue[][] = []
   mergedData.push(mainColumns) // إضافة صف العناوين
-  
+
   newRows.forEach((newRow) => {
     const mergedRow: CellValue[] = []
     mainColumns.forEach((mainCol) => {
@@ -102,7 +102,7 @@ const handlePreview = () => {
     })
     mergedData.push(mergedRow)
   })
-  
+
   setMergedPreviewData(mergedData)
 }
 ```
@@ -139,6 +139,7 @@ interface AppState {
 ### معالجة الأخطاء
 
 جميع رسائل الأخطاء بالعربية:
+
 - "حدث خطأ أثناء قراءة الملف الرئيسي"
 - "حدث خطأ أثناء قراءة ملف المنتجات الجديدة"
 - "حدث خطأ أثناء حفظ الملف"
@@ -147,10 +148,12 @@ interface AppState {
 ## الاختبار
 
 تم إنشاء ملفات Excel تجريبية مع محتوى عربي:
+
 - `main-file.xlsx`: يحتوي على أعمدة (رقم المنتج، اسم المنتج، السعر، الكمية)
 - `new-products.xlsx`: يحتوي على أعمدة (الرقم، العنوان، التكلفة، العدد، العلامة التجارية)
 
 تم التحقق من:
+
 - ✅ قراءة الملفات مع النص العربي
 - ✅ عرض البيانات بشكل صحيح في RTL
 - ✅ البناء ينجح بدون أخطاء

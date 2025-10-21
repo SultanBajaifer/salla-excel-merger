@@ -121,37 +121,82 @@ app.whenReady().then(() => {
     }
   })
 
-  // Excel file saving handler
-  ipcMain.handle('save-excel-file', async (_, filePath: string, data: unknown[][]) => {
-    try {
-      const workbook = new ExcelJS.Workbook()
-      const worksheet = workbook.addWorksheet('البيانات المدمجة')
+  // Excel file saving handler with formatting preservation
+  ipcMain.handle(
+    'save-excel-file',
+    async (_, filePath: string, data: unknown[][], mainFilePath: string) => {
+      try {
+        // Read the original main file to preserve formatting
+        const originalWorkbook = new ExcelJS.Workbook()
+        await originalWorkbook.xlsx.readFile(mainFilePath)
+        const originalWorksheet = originalWorkbook.worksheets[0]
 
-      // Add data to worksheet
-      data.forEach((row) => {
-        worksheet.addRow(row)
-      })
+        // Create new workbook with same structure
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet(originalWorksheet.name || 'البيانات المدمجة')
 
-      // Auto-size columns
-      worksheet.columns.forEach((column) => {
-        let maxLength = 0
-        column.eachCell?.({ includeEmpty: true }, (cell) => {
-          const cellLength = cell.value ? cell.value.toString().length : 10
-          if (cellLength > maxLength) {
-            maxLength = cellLength
+        // Copy column widths from original
+        originalWorksheet.columns.forEach((col, index) => {
+          if (worksheet.columns[index]) {
+            worksheet.columns[index].width = col.width
           }
         })
-        column.width = maxLength < 10 ? 10 : maxLength + 2
-      })
 
-      // Save the file
-      await workbook.xlsx.writeFile(filePath)
-      console.log('File saved successfully:', filePath)
-    } catch (error) {
-      console.error('Error saving Excel file:', error)
-      throw error
+        // Add all data rows
+        data.forEach((row, rowIndex) => {
+          const newRow = worksheet.addRow(row)
+
+          // Copy formatting from original worksheet for title row (row 0) and header row (row 1)
+          if (rowIndex === 0 || rowIndex === 1) {
+            const originalRow = originalWorksheet.getRow(rowIndex + 1)
+
+            // Copy row height
+            newRow.height = originalRow.height
+
+            // Copy cell formatting
+            newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+              const originalCell = originalRow.getCell(colNumber)
+
+              // Copy font
+              if (originalCell.font) {
+                cell.font = { ...originalCell.font }
+              }
+
+              // Copy fill
+              if (originalCell.fill) {
+                cell.fill = { ...originalCell.fill }
+              }
+
+              // Copy border
+              if (originalCell.border) {
+                cell.border = { ...originalCell.border }
+              }
+
+              // Copy alignment
+              if (originalCell.alignment) {
+                cell.alignment = { ...originalCell.alignment }
+              }
+
+              // Copy number format
+              if (originalCell.numFmt) {
+                cell.numFmt = originalCell.numFmt
+              }
+            })
+          }
+        })
+
+        // Apply RTL to worksheet
+        worksheet.views = [{ rightToLeft: true }]
+
+        // Save the file
+        await workbook.xlsx.writeFile(filePath)
+        console.log('File saved successfully with formatting preserved:', filePath)
+      } catch (error) {
+        console.error('Error saving Excel file:', error)
+        throw error
+      }
     }
-  })
+  )
 
   createWindow()
 

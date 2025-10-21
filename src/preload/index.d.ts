@@ -4,7 +4,7 @@ interface API {
   selectFile: () => Promise<string | null>
   saveFile: (defaultPath: string) => Promise<string | null>
   readExcelFile: (filePath: string) => Promise<unknown[][]>
-  saveExcelFile: (filePath: string, data: unknown[][]) => Promise<void>
+  saveExcelFile: (filePath: string, data: unknown[][], mainFilePath: string) => Promise<void>
 }
 
 declare global {
