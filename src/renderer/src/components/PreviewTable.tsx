@@ -14,7 +14,7 @@ const PreviewTable: React.FC<PreviewTableProps> = ({ data, title, maxRows = 5 })
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
-        <p className="text-gray-500">No data available</p>
+        <p className="text-gray-500">لم يتم تحميل أي بيانات بعد</p>
       </div>
     )
   }
@@ -32,7 +32,7 @@ const PreviewTable: React.FC<PreviewTableProps> = ({ data, title, maxRows = 5 })
               {headers.map((header: CellValue, idx: number) => (
                 <th
                   key={idx}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   {String(header)}
                 </th>
@@ -43,7 +43,7 @@ const PreviewTable: React.FC<PreviewTableProps> = ({ data, title, maxRows = 5 })
             {rows.map((row: CellValue[], rowIdx: number) => (
               <tr key={rowIdx} className="hover:bg-gray-50">
                 {row.map((cell: CellValue, cellIdx: number) => (
-                  <td key={cellIdx} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                  <td key={cellIdx} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap text-right">
                     {String(cell)}
                   </td>
                 ))}
@@ -54,7 +54,7 @@ const PreviewTable: React.FC<PreviewTableProps> = ({ data, title, maxRows = 5 })
       </div>
       {data.length > maxRows + 1 && (
         <p className="text-sm text-gray-500 mt-2">
-          Showing first {maxRows} rows of {data.length - 1} total rows
+          عرض أول {maxRows} صفوف من إجمالي {data.length - 1} صف
         </p>
       )}
     </div>

@@ -4,7 +4,6 @@ import FileSelector from './components/FileSelector'
 import PreviewTable from './components/PreviewTable'
 import ColumnMapper from './components/ColumnMapper'
 import SaveButton from './components/SaveButton'
-import { excelService } from './services/excelService'
 
 function App(): React.JSX.Element {
   const {
@@ -16,34 +15,67 @@ function App(): React.JSX.Element {
     mergedPreviewData,
     setCurrentView,
     setMainFilePath,
-    setNewProductsFilePath
+    setNewProductsFilePath,
+    setMainFileData,
+    setNewProductsData
   } = useAppStore()
 
-  const handleSelectMainFile = (): void => {
-    // Placeholder - in real implementation, this would open a file dialog
-    console.log('Select main file clicked')
-    setMainFilePath('C:\\Users\\Example\\mainfile.xlsx')
+  const handleSelectMainFile = async (): Promise<void> => {
+    try {
+      const filePath = await window.api.selectFile()
+      if (filePath) {
+        setMainFilePath(filePath)
+        // Read the file
+        const data = await window.api.readExcelFile(filePath)
+        setMainFileData(data)
+      }
+    } catch (error) {
+      console.error('خطأ في اختيار الملف الرئيسي:', error)
+      alert('حدث خطأ أثناء قراءة الملف الرئيسي')
+    }
   }
 
-  const handleSelectNewProductsFile = (): void => {
-    // Placeholder - in real implementation, this would open a file dialog
-    console.log('Select new products file clicked')
-    setNewProductsFilePath('C:\\Users\\Example\\newproducts.xlsx')
+  const handleSelectNewProductsFile = async (): Promise<void> => {
+    try {
+      const filePath = await window.api.selectFile()
+      if (filePath) {
+        setNewProductsFilePath(filePath)
+        // Read the file
+        const data = await window.api.readExcelFile(filePath)
+        setNewProductsData(data)
+      }
+    } catch (error) {
+      console.error('خطأ في اختيار ملف المنتجات:', error)
+      alert('حدث خطأ أثناء قراءة ملف المنتجات الجديدة')
+    }
   }
 
   const handleOpenMapper = (): void => {
+    if (!mainFileData.length || !newProductsData.length) {
+      alert('يرجى اختيار كلا الملفين أولاً')
+      return
+    }
     setCurrentView('mapper')
   }
 
   const handleSaveFile = async (): Promise<void> => {
     try {
-      // Placeholder - in real implementation, this would use actual file paths
-      const outputPath = 'mainfile_updated.xlsx'
-      await excelService.saveExcelFile(outputPath, mergedPreviewData)
-      alert(`File saved successfully as ${outputPath}`)
+      if (!mainFilePath) {
+        alert('لم يتم تحديد مسار الملف الرئيسي')
+        return
+      }
+      
+      const dir = mainFilePath.substring(0, mainFilePath.lastIndexOf('\\'))
+      const defaultPath = `${dir}\\الملف_الرئيسي_محدث.xlsx`
+      
+      const outputPath = await window.api.saveFile(defaultPath)
+      if (outputPath) {
+        await window.api.saveExcelFile(outputPath, mergedPreviewData)
+        alert('تم حفظ الملف بنجاح')
+      }
     } catch (error) {
-      console.error('Error saving file:', error)
-      alert('Error saving file. Check console for details.')
+      console.error('خطأ في حفظ الملف:', error)
+      alert('حدث خطأ أثناء حفظ الملف')
     }
   }
 
@@ -53,36 +85,37 @@ function App(): React.JSX.Element {
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Salla Excel Merger – Project Ready
+            دمج ملفات Excel لمتجر سلة
           </h1>
           <p className="text-gray-600 mb-8">
-            Select your Excel files to merge and preview the data
+            اختر ملفات Excel للدمج ومعاينة البيانات
           </p>
 
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <FileSelector
-              label="Main File"
+              label="اختيار الملف الرئيسي"
               filePath={mainFilePath}
               onSelect={handleSelectMainFile}
             />
             <FileSelector
-              label="New Products File"
+              label="اختيار ملف المنتجات الجديدة"
               filePath={newProductsFilePath}
               onSelect={handleSelectNewProductsFile}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <PreviewTable data={mainFileData} title="Main File Preview" maxRows={5} />
-            <PreviewTable data={newProductsData} title="New Products Preview" maxRows={5} />
+            <PreviewTable data={mainFileData} title="معاينة الملف الرئيسي" maxRows={5} />
+            <PreviewTable data={newProductsData} title="معاينة المنتجات الجديدة" maxRows={5} />
           </div>
 
           <div className="flex justify-center">
             <button
               onClick={handleOpenMapper}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg text-lg font-semibold"
+              disabled={!mainFileData.length || !newProductsData.length}
+              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Open Column Mapper
+              فتح أداة مطابقة الأعمدة
             </button>
           </div>
         </div>
@@ -104,25 +137,25 @@ function App(): React.JSX.Element {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Merge Preview</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">معاينة الدمج</h1>
 
-          <PreviewTable data={mergedPreviewData} title="Merged Data Preview" maxRows={10} />
+          <PreviewTable data={mergedPreviewData} title="معاينة البيانات المدمجة" maxRows={10} />
 
           <div className="flex gap-4 mt-6">
             <button
               onClick={() => setCurrentView('mapper')}
               className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-md"
             >
-              Back to Mapper
+              العودة إلى أداة المطابقة
             </button>
-            <SaveButton onClick={handleSaveFile} label="Save Main File" />
+            <SaveButton onClick={handleSaveFile} label="حفظ الملف الرئيسي" />
           </div>
         </div>
       </div>
     )
   }
 
-  return <div>Unknown view</div>
+  return <div>عرض غير معروف</div>
 }
 
 export default App

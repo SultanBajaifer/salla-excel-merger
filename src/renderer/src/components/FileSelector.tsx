@@ -15,7 +15,7 @@ const FileSelector: React.FC<FileSelectorProps> = ({ label, filePath, onSelect }
           onClick={onSelect}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
         >
-          Select File
+          اختيار ملف
         </button>
         {filePath && <span className="text-sm text-gray-600 truncate max-w-md">{filePath}</span>}
       </div>

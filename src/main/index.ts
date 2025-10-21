@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import ExcelJS from 'exceljs'
 
 function createWindow(): void {
   // Create the browser window.
@@ -10,7 +11,7 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
-    title: 'Salla Excel Merger – Project Ready',
+    title: 'دمج ملفات Excel لمتجر سلة',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -52,6 +53,107 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // File selection handlers
+  ipcMain.handle('select-file', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'ملفات Excel', extensions: ['xlsx', 'xls'] },
+        { name: 'جميع الملفات', extensions: ['*'] }
+      ]
+    })
+    
+    if (result.canceled) {
+      return null
+    }
+    
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle('save-file', async (_, defaultPath: string) => {
+    const result = await dialog.showSaveDialog({
+      defaultPath,
+      filters: [
+        { name: 'ملفات Excel', extensions: ['xlsx'] }
+      ]
+    })
+    
+    if (result.canceled) {
+      return null
+    }
+    
+    return result.filePath
+  })
+
+  // Excel file reading handler
+  ipcMain.handle('read-excel-file', async (_, filePath: string) => {
+    try {
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.readFile(filePath)
+      
+      const worksheet = workbook.worksheets[0]
+      const data: any[][] = []
+      
+      // Read all rows
+      worksheet.eachRow((row) => {
+        const rowData: any[] = []
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          const value = cell.value
+          if (
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'boolean' ||
+            value === null
+          ) {
+            rowData.push(value)
+          } else if (value && typeof value === 'object' && 'text' in value) {
+            rowData.push(value.text)
+          } else {
+            rowData.push(String(value || ''))
+          }
+        })
+        data.push(rowData)
+      })
+      
+      return data
+    } catch (error) {
+      console.error('Error reading Excel file:', error)
+      throw error
+    }
+  })
+
+  // Excel file saving handler
+  ipcMain.handle('save-excel-file', async (_, filePath: string, data: any[][]) => {
+    try {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('البيانات المدمجة')
+      
+      // Add data to worksheet
+      data.forEach((row) => {
+        worksheet.addRow(row)
+      })
+      
+      // Auto-size columns
+      worksheet.columns.forEach((column) => {
+        let maxLength = 0
+        column.eachCell?.({ includeEmpty: true }, (cell) => {
+          const cellLength = cell.value ? cell.value.toString().length : 10
+          if (cellLength > maxLength) {
+            maxLength = cellLength
+          }
+        })
+        column.width = maxLength < 10 ? 10 : maxLength + 2
+      })
+      
+      // Save the file
+      await workbook.xlsx.writeFile(filePath)
+      console.log('File saved successfully:', filePath)
+    } catch (error) {
+      console.error('Error saving Excel file:', error)
+      throw error
+    }
+  })
 
   createWindow()
 

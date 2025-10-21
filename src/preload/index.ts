@@ -1,8 +1,13 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  selectFile: () => ipcRenderer.invoke('select-file'),
+  saveFile: (defaultPath: string) => ipcRenderer.invoke('save-file', defaultPath),
+  readExcelFile: (filePath: string) => ipcRenderer.invoke('read-excel-file', filePath),
+  saveExcelFile: (filePath: string, data: any) => ipcRenderer.invoke('save-excel-file', filePath, data)
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
