@@ -1,153 +1,164 @@
-# Salla Excel Merger
+# دمج ملفات Excel لمتجر سلة (Salla Excel Merger)
 
-A professional desktop application for merging Excel files, built with Electron, React, and TypeScript.
+تطبيق سطح مكتب احترافي لدمج ملفات Excel، مبني باستخدام Electron و React و TypeScript.
 
-## 🚀 Features
+## 🚀 المميزات
 
-- **Electron + React + TypeScript** - Modern tech stack
-- **TailwindCSS** - Beautiful, responsive UI
-- **Zustand** - Lightweight state management
-- **ExcelJS** - Excel file processing
-- **File Selection** - Easy file picking interface
-- **Column Mapping** - Flexible column mapping between files
-- **Preview** - See merged data before saving
-- **Export** - Save merged files in Excel format
+- **واجهة عربية كاملة** - جميع النصوص بالعربية مع تخطيط RTL
+- **اختيار الملفات** - واجهة سهلة لاختيار ملفات Excel
+- **معاينة البيانات** - عرض أول 5 صفوف من كل ملف
+- **مطابقة الأعمدة** - مطابقة مرنة بين أعمدة الملفات
+- **القيم اليدوية** - إدخال قيم افتراضية للأعمدة غير المطابقة
+- **معاينة الدمج** - عرض البيانات المدمجة قبل الحفظ
+- **حفظ الملف** - حفظ الملف المدمج بصيغة Excel
 
-## 📦 Tech Stack
+## 📦 التقنيات المستخدمة
 
-- **Electron 38** - Desktop application framework
-- **React 19** - UI library
-- **TypeScript 5** - Type safety
-- **Vite 7** - Fast build tool
-- **TailwindCSS 4** - Utility-first CSS
-- **Zustand 5** - State management
-- **ExcelJS 4** - Excel file handling
+- **Electron 38** - إطار عمل تطبيقات سطح المكتب
+- **React 19** - مكتبة واجهة المستخدم
+- **TypeScript 5** - للأمان في الأنواع
+- **Vite 7** - أداة بناء سريعة
+- **TailwindCSS 4** - أنماط CSS
+- **Zustand 5** - إدارة الحالة
+- **ExcelJS 4** - معالجة ملفات Excel
 
-## 🛠️ Project Setup
+## 🛠️ إعداد المشروع
 
-### Prerequisites
+### المتطلبات
 
-- Node.js 18+ and npm
+- Node.js 18+ و npm
 
-### Install Dependencies
+### تثبيت المكتبات
 
 ```bash
 npm install
 ```
 
-### Development
+### التطوير
 
-Run the app in development mode with hot reload:
+تشغيل التطبيق في وضع التطوير مع إعادة التحميل التلقائي:
 
 ```bash
 npm run dev
 ```
 
-### Build
+### البناء
 
-Build the application for production:
+بناء التطبيق للإنتاج:
 
 ```bash
-# For Windows
+# لنظام Windows
 npm run build:win
 
-# For macOS
+# لنظام macOS
 npm run build:mac
 
-# For Linux
+# لنظام Linux
 npm run build:linux
 ```
 
-### Other Commands
+### أوامر أخرى
 
 ```bash
-# Type check
+# فحص الأنواع
 npm run typecheck
 
-# Lint code
+# فحص الكود
 npm run lint
 
-# Format code
+# تنسيق الكود
 npm run format
 ```
 
-## 📁 Project Structure
+## 📁 بنية المشروع
 
 ```
 salla-excel-merger/
 ├── src/
-│   ├── main/                    # Electron main process
-│   │   └── index.ts
-│   ├── preload/                 # Electron preload scripts
-│   │   └── index.ts
-│   └── renderer/                # React application
-│       ├── index.html
+│   ├── main/                    # عملية Electron الرئيسية
+│   │   └── index.ts            # معالجات IPC وقراءة/كتابة Excel
+│   ├── preload/                 # سكريبتات Preload
+│   │   ├── index.ts            # تعريف APIs
+│   │   └── index.d.ts          # TypeScript definitions
+│   └── renderer/                # تطبيق React
+│       ├── index.html          # HTML مع lang="ar" و dir="rtl"
 │       └── src/
-│           ├── App.tsx          # Main application component
-│           ├── main.tsx         # React entry point
-│           ├── index.css        # Global styles with TailwindCSS
-│           ├── components/      # React components
-│           │   ├── FileSelector.tsx
-│           │   ├── ColumnMapper.tsx
-│           │   ├── ManualFieldsForm.tsx
-│           │   ├── PreviewTable.tsx
-│           │   └── SaveButton.tsx
-│           ├── services/        # Business logic
-│           │   └── excelService.ts
-│           └── store/           # State management
-│               └── useAppStore.ts
-├── electron.vite.config.ts      # Vite configuration
-├── electron-builder.yml         # Electron builder configuration
+│           ├── App.tsx          # المكون الرئيسي مع 3 واجهات
+│           ├── main.tsx         # نقطة دخول React
+│           ├── index.css        # الأنماط العامة مع RTL
+│           ├── components/      # مكونات React
+│           │   ├── FileSelector.tsx       # مكون اختيار الملفات
+│           │   ├── ColumnMapper.tsx       # أداة مطابقة الأعمدة
+│           │   ├── PreviewTable.tsx       # جدول معاينة البيانات
+│           │   └── SaveButton.tsx         # زر الحفظ
+│           ├── services/        # منطق العمل
+│           │   └── excelService.ts       # خدمات Excel (موجود لكن غير مستخدم)
+│           └── store/           # إدارة الحالة
+│               └── useAppStore.ts        # Zustand store
+├── electron.vite.config.ts      # إعدادات Vite
+├── electron-builder.yml         # إعدادات Electron builder
 └── package.json
 ```
 
-## 🎯 Current Status
+## 🎯 الحالة الحالية
 
-✅ **Project Structure** - Fully set up and organized
-✅ **UI Components** - All placeholder components created
-✅ **State Management** - Zustand store configured
-✅ **Excel Service** - Basic service structure in place
-✅ **TailwindCSS** - Fully configured and working
-✅ **Development Environment** - Ready for development
+✅ **بنية المشروع** - تم الإعداد والتنظيم بالكامل
+✅ **واجهة المستخدم** - جميع النصوص بالعربية مع RTL
+✅ **اختيار الملفات** - تم التنفيذ عبر IPC
+✅ **قراءة ملفات Excel** - تم التنفيذ في main process
+✅ **معاينة البيانات** - عرض أول 5 صفوف
+✅ **مطابقة الأعمدة** - تم التنفيذ مع دعم القيم اليدوية
+✅ **دمج البيانات** - تم التنفيذ مع معاينة
+✅ **حفظ الملف** - تم التنفيذ مع اسم ملف عربي
+✅ **إدارة الحالة** - Zustand مُعد ويعمل
+✅ **معالجة الأخطاء** - جميع الرسائل بالعربية
 
-🚧 **Next Steps**:
+## 🖼️ الواجهات
 
-- Implement actual file selection using Electron dialogs
-- Add Excel file parsing logic
-- Implement column mapping algorithm
-- Add data validation
-- Implement merge logic
-- Add error handling and user feedback
+### الواجهة الرئيسية
 
-## 🖼️ Views
+- اختيار الملف الرئيسي
+- اختيار ملف المنتجات الجديدة
+- معاينة كلا الملفين (أول 5 صفوف)
+- الانتقال إلى أداة مطابقة الأعمدة
 
-### Main View
+### واجهة مطابقة الأعمدة
 
-- Select main Excel file
-- Select new products Excel file
-- Preview both files (first 5 rows)
-- Navigate to column mapper
+- مطابقة الأعمدة من المنتجات الجديدة إلى الملف الرئيسي
+- تعيين قيم افتراضية يدوية للأعمدة غير المطابقة
+- زر عرض النتيجة
 
-### Column Mapper View
+### واجهة المعاينة
 
-- Map columns from new products to main file
-- Set manual default values for unmapped columns
-- Preview merge button
+- عرض معاينة البيانات المدمجة
+- حفظ الملف المدمج على القرص
 
-### Preview View
+## 💡 كيفية الاستخدام
 
-- Display merged data preview
-- Save merged file to disk
+1. **اختيار الملفات**
+   - انقر على "اختيار الملف الرئيسي" واختر ملف Excel الرئيسي
+   - انقر على "اختيار ملف المنتجات الجديدة" واختر ملف المنتجات
+   - سيتم عرض معاينة لأول 5 صفوف من كل ملف
 
-## 📝 License
+2. **مطابقة الأعمدة**
+   - انقر على "فتح أداة مطابقة الأعمدة"
+   - لكل عمود في الملف الرئيسي، اختر العمود المطابق من المنتجات الجديدة
+   - أو اختر "إدخال قيمة يدوياً" وأدخل قيمة افتراضية
 
-This project is private and proprietary.
+3. **معاينة وحفظ**
+   - انقر على "عرض النتيجة" لمعاينة البيانات المدمجة
+   - إذا كانت النتيجة صحيحة، انقر على "حفظ الملف الرئيسي"
+   - اختر مكان الحفظ واسم الملف
 
-## 👨‍💻 Development
+## 📝 ترخيص
 
-This is a professional desktop application built for Windows. The codebase follows best practices with TypeScript strict mode, modular component architecture, and clear separation of concerns.
+هذا المشروع خاص وملكي.
 
-### Recommended IDE Setup
+## 👨‍💻 التطوير
+
+هذا تطبيق سطح مكتب احترافي مبني لنظام Windows. يتبع الكود أفضل الممارسات مع TypeScript strict mode، وبنية مكونات معيارية، وفصل واضح للمسؤوليات.
+
+### إعداد IDE الموصى به
 
 - [VSCode](https://code.visualstudio.com/)
 - [ESLint Extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
