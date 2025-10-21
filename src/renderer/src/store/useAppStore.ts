@@ -3,7 +3,7 @@ import { create } from 'zustand'
 type CellValue = string | number | boolean | null
 
 interface ColumnMapping {
-  newColumn: string
+  newColumn: string | null
   mainColumn: string
   manualValue?: string
 }
@@ -29,29 +29,10 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   mainFilePath: null,
   newProductsFilePath: null,
-  mainFileData: [
-    ['ID', 'Name', 'Price', 'Stock'],
-    ['1', 'Product A', '100', '50'],
-    ['2', 'Product B', '200', '30'],
-    ['3', 'Product C', '150', '20'],
-    ['4', 'Product D', '300', '10']
-  ],
-  newProductsData: [
-    ['ID', 'Title', 'Cost', 'Quantity', 'Brand'],
-    ['5', 'Product E', '120', '25', 'BrandX'],
-    ['6', 'Product F', '180', '15', 'BrandY'],
-    ['7', 'Product G', '220', '35', 'BrandX'],
-    ['8', 'Product H', '90', '40', 'BrandZ']
-  ],
+  mainFileData: [],
+  newProductsData: [],
   columnMappings: [],
-  mergedPreviewData: [
-    ['ID', 'Name', 'Price', 'Stock', 'Brand'],
-    ['1', 'Product A', '100', '50', 'N/A'],
-    ['2', 'Product B', '200', '30', 'N/A'],
-    ['3', 'Product C', '150', '20', 'N/A'],
-    ['4', 'Product D', '300', '10', 'N/A'],
-    ['5', 'Product E', '120', '25', 'BrandX']
-  ],
+  mergedPreviewData: [],
   currentView: 'main',
 
   setMainFilePath: (path) => set({ mainFilePath: path }),
