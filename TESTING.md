@@ -9,7 +9,7 @@
 يمكنك إنشاء ملفات اختبار تلقائياً باستخدام السكريبت التالي:
 
 ```bash
-node create-test-files.js
+node scripts/create-test-files.js
 ```
 
 سيتم إنشاء:

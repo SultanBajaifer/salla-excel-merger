@@ -442,7 +442,7 @@ await window.api.saveExcelFile(outputPath, mergedPreviewData, mainFilePath)
 
 ### إنشاء ملفات الاختبار
 ```bash
-node create-test-files.js
+node scripts/create-test-files.js
 ```
 
 **الناتج:**

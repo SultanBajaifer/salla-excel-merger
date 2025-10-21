@@ -34,6 +34,6 @@ out
 *.tgz
 .eslintcache
 
-# Test files
-create-test-files.js
+# Test files and scripts
+scripts/
 test-*.xlsx
