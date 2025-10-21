@@ -83,6 +83,7 @@ function App(): React.JSX.Element {
       if (outputPath) {
         await window.api.saveExcelFile(outputPath, mergedPreviewData, mainFilePath)
         alert('تم حفظ الملف بنجاح')
+        setCurrentView('main')
       }
     } catch (error) {
       console.error('خطأ في حفظ الملف:', error)

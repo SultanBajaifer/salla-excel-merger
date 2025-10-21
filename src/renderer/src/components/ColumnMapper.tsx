@@ -23,7 +23,7 @@ const ColumnMapper: React.FC = () => {
   // Define column configurations
   const columnConfigs: ColumnConfig[] = [
     { name: 'أسم المنتج', category: 'required' },
-    { name: 'باركود', category: 'required' },
+    { name: 'الباركود', category: 'required' },
     { name: 'سعر المنتج', category: 'price' },
     { name: 'سعر التكلفة', category: 'price' },
     { name: 'السعر المخفض', category: 'price' }
