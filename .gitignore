@@ -33,3 +33,7 @@ out
 # Build artifacts
 *.tgz
 .eslintcache
+
+# Test files
+create-test-files.js
+test-*.xlsx
