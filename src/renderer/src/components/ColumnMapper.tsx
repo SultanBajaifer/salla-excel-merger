@@ -7,18 +7,24 @@ const ColumnMapper: React.FC = () => {
   const {
     newProductsData,
     mainFileData,
+    productsStartRow,
     setCurrentView,
     setColumnMappings,
     setMergedPreviewData,
-    taxRate,
-    discountRate,
+    ratio1,
+    ratio2,
     costColumn,
     setCostColumn
   } = useAppStore()
 
-  // Extract column headers (skip first row as it's the title row in main file)
-  const newColumns = (newProductsData[0] || []).map((col) => String(col))
-  const mainColumns = (mainFileData[1] || []).map((col) => String(col)) // Row 1 is header, row 0 is title
+  // Extract column headers
+  // For products file: use the row before productsStartRow as headers (0-indexed, so productsStartRow - 1)
+  // Note: productsStartRow is 1-based (e.g., 9 means row 9 in Excel, which is index 8 in array)
+  const newColumnsRowIndex = productsStartRow - 1 // Headers are at the start row
+  const newColumns = (newProductsData[newColumnsRowIndex] || []).map((col) => String(col))
+
+  // Main file: skip first row as it's the title row, row 1 is header (0-indexed)
+  const mainColumns = (mainFileData[1] || []).map((col) => String(col))
 
   // Define column configurations
   const columnConfigs: ColumnConfig[] = [
@@ -84,8 +90,9 @@ const ColumnMapper: React.FC = () => {
       mergedData.push(row)
     })
 
-    // Process each row from new products
-    const newRows = newProductsData.slice(1)
+    // Process each row from new products (skip rows before productsStartRow)
+    // productsStartRow is 1-based, so we need to start from index productsStartRow
+    const newRows = newProductsData.slice(productsStartRow)
     newRows.forEach((newRow) => {
       const mergedRow: CellValue[] = []
       const costColIndex = costColumn ? newColumns.indexOf(costColumn) : -1
@@ -96,17 +103,20 @@ const ColumnMapper: React.FC = () => {
         const mapping = mappings[mainCol]
 
         if (category === 'price' && costColumn) {
-          // Calculate price based on formula
-          if (mainCol === 'سعر المنتج') {
-            // سعر المنتج = التكلفة × الضريبة
-            mergedRow.push(costValue * taxRate)
-          } else if (mainCol === 'سعر التكلفة') {
-            // سعر التكلفة = التكلفة
+          // Calculate price based on new formula:
+          // سعر التكلفة = المجموع
+          // السعر المخفض = سعر التكلفة × النسبة ١
+          // سعر المنتج = السعر المخفض × النسبة ٢
+          if (mainCol === 'سعر التكلفة') {
+            // سعر التكلفة = المجموع (cost)
             mergedRow.push(costValue)
           } else if (mainCol === 'السعر المخفض') {
-            // السعر المخفض = سعر المنتج ÷ التخفيض
-            const productPrice = costValue * taxRate
-            mergedRow.push(discountRate > 1 ? productPrice / discountRate : productPrice)
+            // السعر المخفض = سعر التكلفة × النسبة ١
+            mergedRow.push(costValue * ratio1)
+          } else if (mainCol === 'سعر المنتج') {
+            // سعر المنتج = السعر المخفض × النسبة ٢
+            const discountedPrice = costValue * ratio1
+            mergedRow.push(discountedPrice * ratio2)
           } else {
             mergedRow.push('')
           }

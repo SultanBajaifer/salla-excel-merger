@@ -13,11 +13,13 @@ function App(): React.JSX.Element {
     mainFileData,
     newProductsData,
     mergedPreviewData,
+    productsStartRow,
     setCurrentView,
     setMainFilePath,
     setNewProductsFilePath,
     setMainFileData,
-    setNewProductsData
+    setNewProductsData,
+    setProductsStartRow
   } = useAppStore()
 
   const handleSelectMainFile = async (): Promise<void> => {
@@ -109,6 +111,9 @@ function App(): React.JSX.Element {
               label="اختيار ملف المنتجات الجديدة"
               filePath={newProductsFilePath}
               onSelect={handleSelectNewProductsFile}
+              showStartRow={true}
+              startRow={productsStartRow}
+              onStartRowChange={setProductsStartRow}
             />
           </div>
 
@@ -121,7 +126,26 @@ function App(): React.JSX.Element {
                 </p>
               )}
             </div>
-            <PreviewTable data={newProductsData} title="معاينة المنتجات الجديدة" maxRows={5} />
+            <div>
+              <PreviewTable
+                data={
+                  newProductsData.length > 0
+                    ? [
+                        newProductsData[productsStartRow - 1] || [],
+                        ...newProductsData.slice(productsStartRow, productsStartRow + 5)
+                      ]
+                    : []
+                }
+                title="معاينة المنتجات الجديدة"
+                maxRows={5}
+              />
+              {newProductsData.length > 0 && (
+                <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded border border-blue-200">
+                  ملاحظة: البيانات تبدأ من الصف {productsStartRow}. الصف {productsStartRow - 1}{' '}
+                  يحتوي على العناوين.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-center">
