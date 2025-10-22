@@ -18,9 +18,10 @@ const ColumnMapper: React.FC = () => {
   } = useAppStore()
 
   // Extract column headers
-  // For products file: use the row before productsStartRow as headers (0-indexed, so productsStartRow - 1)
-  // Note: productsStartRow is 1-based (e.g., 9 means row 9 in Excel, which is index 8 in array)
-  const newColumnsRowIndex = productsStartRow - 1 // Headers are at the start row
+  // For products file: headers are one row before the data start row
+  // Note: productsStartRow is 1-based (e.g., 9 means data starts at row 9 in Excel, headers at row 8)
+  // So if productsStartRow = 9, headers are at Excel row 8, which is array index 7 = productsStartRow - 2
+  const newColumnsRowIndex = productsStartRow - 2 // Headers are one row before data
   const newColumns = (newProductsData[newColumnsRowIndex] || []).map((col) => String(col))
 
   // Main file: skip first row as it's the title row, row 1 is header (0-indexed)
@@ -91,8 +92,9 @@ const ColumnMapper: React.FC = () => {
     })
 
     // Process each row from new products (skip rows before productsStartRow)
-    // productsStartRow is 1-based, so we need to start from index productsStartRow
-    const newRows = newProductsData.slice(productsStartRow)
+    // productsStartRow is 1-based Excel row number where data starts
+    // So if productsStartRow = 9, data starts at array index 8 = productsStartRow - 1
+    const newRows = newProductsData.slice(productsStartRow - 1)
     newRows.forEach((newRow) => {
       const mergedRow: CellValue[] = []
       const costColIndex = costColumn ? newColumns.indexOf(costColumn) : -1

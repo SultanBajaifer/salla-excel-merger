@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>((set) => ({
   columnMappings: [],
   mergedPreviewData: [],
   currentView: 'main',
-  productsStartRow: 1, // Default: data starts at row 1 (0-indexed would be row 2 in Excel)
+  productsStartRow: 2, // Default: data starts at row 2 (headers at row 1)
   ratio1: 1.0, // Default: no change (النسبة ١)
   ratio2: 1.0, // Default: no change (النسبة ٢)
   costColumn: null,

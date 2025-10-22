@@ -129,20 +129,20 @@ function App(): React.JSX.Element {
             <div>
               <PreviewTable
                 data={
-                  newProductsData.length > 0
+                  newProductsData.length > 0 && productsStartRow > 1
                     ? [
-                        newProductsData[productsStartRow - 1] || [],
-                        ...newProductsData.slice(productsStartRow, productsStartRow + 5)
+                        newProductsData[productsStartRow - 2] || [], // Header row
+                        ...newProductsData.slice(productsStartRow - 1, productsStartRow + 4) // First 5 data rows
                       ]
-                    : []
+                    : newProductsData.slice(0, 6)
                 }
                 title="معاينة المنتجات الجديدة"
                 maxRows={5}
               />
-              {newProductsData.length > 0 && (
+              {newProductsData.length > 0 && productsStartRow > 1 && (
                 <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded border border-blue-200">
-                  ملاحظة: البيانات تبدأ من الصف {productsStartRow}. الصف {productsStartRow - 1}{' '}
-                  يحتوي على العناوين.
+                  ملاحظة: العناوين في الصف {productsStartRow - 1}، والبيانات تبدأ من الصف{' '}
+                  {productsStartRow}.
                 </p>
               )}
             </div>
