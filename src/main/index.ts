@@ -164,13 +164,15 @@ app.whenReady().then(() => {
       filePath: string,
       data: unknown[][],
       mainFilePath: string,
-      mainFileRowCount: number
+      mainFileRowCount: number,
+      headerRowIndex: number
     ) => {
       console.log('[save-excel-file] invoked', {
         filePath,
         mainFilePath,
         rows: data?.length ?? 0,
-        mainFileRows: mainFileRowCount
+        mainFileRows: mainFileRowCount,
+        headerRow: headerRowIndex
       })
       try {
         // Try to read the original main file to preserve formatting; if it fails or has no sheets, proceed without template
@@ -233,23 +235,24 @@ app.whenReady().then(() => {
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
 
-        // Only copy formatting for rows that came from the main file
-        // mainFileRowCount tells us how many rows in the merged data are from the original file
-        // Rows beyond that are new product rows and should have clean/default formatting
+        // Only preserve formatting for title rows and header row (rows up to and including headerRowIndex)
+        // Data rows (after header) should have NO formatting - clean/default styling
+        // headerRowIndex is 1-based (e.g., 2 means header is at row 2 in Excel)
+        // In our 0-based merged data array, we preserve formatting for rows 0 to headerRowIndex-1
         console.log(
-          '[save-excel-file] mainFileRowCount:',
-          mainFileRowCount,
-          'will preserve formatting for first',
-          mainFileRowCount,
-          'rows'
+          '[save-excel-file] headerRowIndex:',
+          headerRowIndex,
+          'will preserve formatting only for rows 0 to',
+          headerRowIndex - 1,
+          '(title and header rows)'
         )
 
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Copy formatting ONLY for rows that came from the original main file
-          // New product rows (rowIndex >= mainFileRowCount) get clean/default formatting
-          if (originalWorksheet && rowIndex < mainFileRowCount) {
+          // Only copy formatting for title rows and header row (rowIndex < headerRowIndex)
+          // All data rows get clean/default formatting with NO bold, italic, strikethrough, etc.
+          if (originalWorksheet && rowIndex < headerRowIndex) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
             if (originalRow && originalRow.hasValues) {
               // Copy row height
@@ -287,6 +290,7 @@ app.whenReady().then(() => {
               })
             }
           }
+          // Data rows (rowIndex >= headerRowIndex) automatically get clean formatting
 
           // Log the first few rows for debugging
           if (rowIndex < 3) {

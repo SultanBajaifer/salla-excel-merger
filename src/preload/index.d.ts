@@ -8,7 +8,8 @@ interface API {
     filePath: string,
     data: unknown[][],
     mainFilePath: string,
-    mainFileRowCount: number
+    mainFileRowCount: number,
+    headerRowIndex: number
   ) => Promise<void>
   cleanExcelFile: (filePath: string) => Promise<string>
 }

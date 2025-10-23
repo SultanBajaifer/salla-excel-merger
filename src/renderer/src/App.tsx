@@ -94,12 +94,14 @@ function App(): React.JSX.Element {
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
-        // Pass the number of rows from main file so we know which rows to preserve formatting for
+        // Pass the number of rows from main file and header row index
+        // So we know which rows to preserve formatting for (only title and header rows)
         await window.api.saveExcelFile(
           outputPath,
           mergedPreviewData,
           mainFilePath,
-          mainFileData.length
+          mainFileData.length,
+          mainFileHeaderRow || 1
         )
         alert('تم حفظ الملف بنجاح')
         setCurrentView('main')
