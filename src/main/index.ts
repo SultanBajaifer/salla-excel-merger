@@ -309,24 +309,18 @@ app.whenReady().then(() => {
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
 
-        // Only preserve formatting for title rows and header row (rows up to and including headerRowIndex)
-        // Data rows (after header) should have NO formatting - clean/default styling
-        // headerRowIndex is 1-based (e.g., 2 means header is at row 2 in Excel)
-        // In our 0-based merged data array, we preserve formatting for rows 0 to headerRowIndex-1
+        // Only preserve formatting for the FIRST row (row 0 - title row)
+        // All other rows (header and data) should have NO formatting - clean/default styling
         console.log(
-          '[save-excel-file] headerRowIndex:',
-          headerRowIndex,
-          'will preserve formatting only for rows 0 to',
-          headerRowIndex - 1,
-          '(title and header rows)'
+          '[save-excel-file] will preserve formatting ONLY for row 0 (title row), all other rows will have clean formatting'
         )
 
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Only copy formatting for title rows and header row (rowIndex < headerRowIndex)
-          // All data rows get clean/default formatting with NO bold, italic, strikethrough, etc.
-          if (originalWorksheet && rowIndex < headerRowIndex) {
+          // Only copy formatting for the first row (title row)
+          // All other rows (header and data) get clean/default formatting with NO bold, italic, strikethrough, etc.
+          if (originalWorksheet && rowIndex === 0) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
             if (originalRow && originalRow.hasValues) {
               // Copy row height
@@ -364,7 +358,7 @@ app.whenReady().then(() => {
               })
             }
           }
-          // Data rows (rowIndex >= headerRowIndex) automatically get clean formatting
+          // All rows after row 0 automatically get clean formatting (no bold, italic, strikethrough)
 
           // Log the first few rows for debugging
           if (rowIndex < 3) {
