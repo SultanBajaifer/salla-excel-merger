@@ -7,7 +7,8 @@ const api = {
   saveFile: (defaultPath: string) => ipcRenderer.invoke('save-file', defaultPath),
   readExcelFile: (filePath: string) => ipcRenderer.invoke('read-excel-file', filePath),
   saveExcelFile: (filePath: string, data: unknown[][], mainFilePath: string) =>
-    ipcRenderer.invoke('save-excel-file', filePath, data, mainFilePath)
+    ipcRenderer.invoke('save-excel-file', filePath, data, mainFilePath),
+  cleanExcelFile: (filePath: string) => ipcRenderer.invoke('clean-excel-file', filePath)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

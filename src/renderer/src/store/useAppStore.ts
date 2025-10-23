@@ -23,7 +23,7 @@ interface AppState {
   newProductsData: CellValue[][]
   columnMappings: ColumnMapping[]
   mergedPreviewData: CellValue[][]
-  currentView: 'main' | 'mapper' | 'preview'
+  currentView: 'main' | 'mapper' | 'preview' | 'cleaning'
 
   // Products file data start row (1-based index, e.g., 9 means data starts at row 9)
   productsStartRow: number
@@ -35,17 +35,25 @@ interface AppState {
   // Column to use for cost in price calculations
   costColumn: string | null
 
+  // Cleaning page state
+  cleaningFilePath: string | null
+  cleaningFileData: CellValue[][]
+  cleanedFilePath: string | null
+
   setMainFilePath: (path: string | null) => void
   setNewProductsFilePath: (path: string | null) => void
   setMainFileData: (data: CellValue[][]) => void
   setNewProductsData: (data: CellValue[][]) => void
   setColumnMappings: (mappings: ColumnMapping[]) => void
   setMergedPreviewData: (data: CellValue[][]) => void
-  setCurrentView: (view: 'main' | 'mapper' | 'preview') => void
+  setCurrentView: (view: 'main' | 'mapper' | 'preview' | 'cleaning') => void
   setProductsStartRow: (row: number) => void
   setRatio1: (rate: number) => void
   setRatio2: (rate: number) => void
   setCostColumn: (column: string | null) => void
+  setCleaningFilePath: (path: string | null) => void
+  setCleaningFileData: (data: CellValue[][]) => void
+  setCleanedFilePath: (path: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -60,6 +68,9 @@ export const useAppStore = create<AppState>((set) => ({
   ratio1: 1.0, // Default: no change (النسبة ١)
   ratio2: 1.0, // Default: no change (النسبة ٢)
   costColumn: null,
+  cleaningFilePath: null,
+  cleaningFileData: [],
+  cleanedFilePath: null,
 
   setMainFilePath: (path) => set({ mainFilePath: path }),
   setNewProductsFilePath: (path) => set({ newProductsFilePath: path }),
@@ -71,7 +82,10 @@ export const useAppStore = create<AppState>((set) => ({
   setProductsStartRow: (row) => set({ productsStartRow: row }),
   setRatio1: (rate) => set({ ratio1: rate }),
   setRatio2: (rate) => set({ ratio2: rate }),
-  setCostColumn: (column) => set({ costColumn: column })
+  setCostColumn: (column) => set({ costColumn: column }),
+  setCleaningFilePath: (path) => set({ cleaningFilePath: path }),
+  setCleaningFileData: (data) => set({ cleaningFileData: data }),
+  setCleanedFilePath: (path) => set({ cleanedFilePath: path })
 }))
 
 export type { CellValue, ColumnConfig, ColumnCategory }
