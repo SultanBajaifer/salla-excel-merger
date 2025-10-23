@@ -45,6 +45,10 @@ interface AppState {
   cleaningFileData: CellValue[][]
   cleanedFilePath: string | null
 
+  // Formatting options for the final merged file
+  clearFormattingFromRow: number | null // Row number (1-based) from which to clear formatting (null = don't clear)
+  preserveFirstRowFormatting: boolean // Whether to preserve first row formatting
+
   setMainFilePath: (path: string | null) => void
   setNewProductsFilePath: (path: string | null) => void
   setMainFileData: (data: CellValue[][]) => void
@@ -61,6 +65,8 @@ interface AppState {
   setCleaningFilePath: (path: string | null) => void
   setCleaningFileData: (data: CellValue[][]) => void
   setCleanedFilePath: (path: string | null) => void
+  setClearFormattingFromRow: (row: number | null) => void
+  setPreserveFirstRowFormatting: (preserve: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -80,6 +86,8 @@ export const useAppStore = create<AppState>((set) => ({
   cleaningFilePath: null,
   cleaningFileData: [],
   cleanedFilePath: null,
+  clearFormattingFromRow: null, // Default: don't clear formatting
+  preserveFirstRowFormatting: true, // Default: preserve first row
 
   setMainFilePath: (path) => set({ mainFilePath: path }),
   setNewProductsFilePath: (path) => set({ newProductsFilePath: path }),
@@ -96,7 +104,9 @@ export const useAppStore = create<AppState>((set) => ({
   setCostColumn: (column) => set({ costColumn: column }),
   setCleaningFilePath: (path) => set({ cleaningFilePath: path }),
   setCleaningFileData: (data) => set({ cleaningFileData: data }),
-  setCleanedFilePath: (path) => set({ cleanedFilePath: path })
+  setCleanedFilePath: (path) => set({ cleanedFilePath: path }),
+  setClearFormattingFromRow: (row) => set({ clearFormattingFromRow: row }),
+  setPreserveFirstRowFormatting: (preserve) => set({ preserveFirstRowFormatting: preserve })
 }))
 
 export type { CellValue, ColumnConfig, ColumnCategory }

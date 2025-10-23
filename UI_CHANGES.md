@@ -22,6 +22,7 @@ The old interface only allowed specifying a start row number for the products fi
 ```
 
 **Limitations**:
+
 - No visual preview of the file
 - Manual input prone to errors
 - Only for products file
@@ -87,6 +88,7 @@ The new interface provides visual preview and dropdown selection for BOTH files:
 ```
 
 **Improvements**:
+
 - ✅ Visual preview of first 15 rows
 - ✅ Dropdown selection (no manual input errors)
 - ✅ Works for BOTH main and products files
@@ -206,6 +208,7 @@ Throughout the interface:
 The interface adapts to different screen sizes:
 
 ### Desktop View (Wide)
+
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  Main File                    │  Products File                 │
@@ -214,6 +217,7 @@ The interface adapts to different screen sizes:
 ```
 
 ### Mobile/Narrow View
+
 ```
 ┌────────────────────────┐
 │  Main File             │
@@ -265,6 +269,7 @@ The interface adapts to different screen sizes:
 ## Edge Cases Handled
 
 ### Case 1: File with < 15 Rows
+
 ```
 ┌────────────────────────────────────┐
 │ حدد الصف الذي يحتوي على العناوين  │
@@ -279,6 +284,7 @@ The interface adapts to different screen sizes:
 ```
 
 ### Case 2: No File Selected
+
 ```
 ┌────────────────────────────────────┐
 │ اختيار الملف الرئيسي              │
@@ -289,6 +295,7 @@ The interface adapts to different screen sizes:
 ```
 
 ### Case 3: Large File (> 15 Rows)
+
 ```
 ┌────────────────────────────────────┐
 │ معاينة أول 15 صف:                 │
@@ -307,16 +314,16 @@ The interface adapts to different screen sizes:
 
 ## Summary of UI Improvements
 
-| Feature | Before | After |
-|---------|--------|-------|
-| Visual Preview | ❌ No | ✅ Yes (15 rows) |
-| Header Selection | ❌ Manual input | ✅ Dropdown |
-| Main File Header | ❌ Hardcoded | ✅ User selects |
-| Products File Header | ⚠️ Manual input | ✅ Dropdown |
-| Validation | ⚠️ Minimal | ✅ Comprehensive |
-| Visual Feedback | ❌ None | ✅ Highlighted row |
-| Error Prevention | ⚠️ Limited | ✅ Strong validation |
-| RTL Support | ✅ Yes | ✅ Yes (maintained) |
+| Feature              | Before          | After                |
+| -------------------- | --------------- | -------------------- |
+| Visual Preview       | ❌ No           | ✅ Yes (15 rows)     |
+| Header Selection     | ❌ Manual input | ✅ Dropdown          |
+| Main File Header     | ❌ Hardcoded    | ✅ User selects      |
+| Products File Header | ⚠️ Manual input | ✅ Dropdown          |
+| Validation           | ⚠️ Minimal      | ✅ Comprehensive     |
+| Visual Feedback      | ❌ None         | ✅ Highlighted row   |
+| Error Prevention     | ⚠️ Limited      | ✅ Strong validation |
+| RTL Support          | ✅ Yes          | ✅ Yes (maintained)  |
 
 ---
 

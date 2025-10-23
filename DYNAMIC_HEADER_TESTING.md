@@ -31,6 +31,7 @@ The application now allows users to dynamically select which row contains the he
 ## User Interface Changes
 
 ### Main File Selection
+
 ```
 اختيار الملف الرئيسي
 [اختيار ملف] filename.xlsx
@@ -49,6 +50,7 @@ The application now allows users to dynamically select which row contains the he
 ```
 
 ### Products File Selection
+
 Same interface with label: "حدد الصف الذي يحتوي على العناوين (ملف المنتجات)"
 
 ## Testing Scenarios
@@ -63,6 +65,7 @@ node /tmp/create-test-files.js
 ```
 
 This creates:
+
 - `main_header_row1.xlsx` - Header at row 1
 - `main_header_row2.xlsx` - Header at row 2 (with title in row 1)
 - `main_header_row5.xlsx` - Header at row 5 (with empty rows above)
@@ -70,9 +73,11 @@ This creates:
 - `products_header_row9.xlsx` - Header at row 9 (with empty rows above)
 
 ### Test Case 1: Both Headers at Row 1
+
 **Scenario**: Standard case where both files have headers in the first row
 
 **Steps**:
+
 1. Select `main_header_row1.xlsx` as main file
 2. Select row 1 as header for main file
 3. Select `products_header_row1.xlsx` as products file
@@ -82,14 +87,17 @@ This creates:
 7. Save the merged file
 
 **Expected Result**:
+
 - Headers correctly identified
 - Data rows start from row 2 in both files
 - Merged file has correct structure
 
 ### Test Case 2: Main at Row 2, Products at Row 1
+
 **Scenario**: Main file has a title row, products file is standard
 
 **Steps**:
+
 1. Select `main_header_row2.xlsx` as main file
 2. Select row 2 as header for main file
 3. Select `products_header_row1.xlsx` as products file
@@ -99,14 +107,17 @@ This creates:
 7. Save the merged file
 
 **Expected Result**:
+
 - Title row (row 1) from main file is preserved in output
 - Headers correctly identified from row 2 of main file
 - Merged file maintains title row formatting
 
 ### Test Case 3: Both Headers at Non-Standard Positions
+
 **Scenario**: Testing maximum flexibility with headers at rows 5 and 9
 
 **Steps**:
+
 1. Select `main_header_row5.xlsx` as main file
 2. Select row 5 as header for main file
 3. Select `products_header_row9.xlsx` as products file
@@ -116,45 +127,55 @@ This creates:
 7. Save the merged file
 
 **Expected Result**:
+
 - All rows before row 5 in main file are preserved
 - Headers correctly identified from row 5 of main file
 - Products data correctly read from row 10 onwards
 - Merged file maintains all original structure
 
 ### Test Case 4: File with Fewer Than 15 Rows
+
 **Scenario**: Ensure dropdown handles files with fewer rows
 
 **Steps**:
+
 1. Select a file with only 8 rows
 2. Verify dropdown only shows options 1-8
 3. Select appropriate header row
 4. Proceed with merge
 
 **Expected Result**:
+
 - Dropdown adapts to actual number of rows
 - No errors when file has fewer than 15 rows
 
 ### Test Case 5: No Header Selected
+
 **Scenario**: Validation prevents proceeding without header selection
 
 **Steps**:
+
 1. Select both files
 2. Do NOT select header rows
 3. Try to click "فتح أداة مطابقة الأعمدة"
 
 **Expected Result**:
+
 - Alert message: "يرجى اختيار الصف الذي يحتوي على العناوين للملف الرئيسي"
 - Button is disabled until both header rows are selected
 
 ### Test Case 6: Edge Case - Header at Last Row
+
 **Scenario**: Testing edge case where header is at the last row
 
 **Steps**:
+
 1. Create or use a file where the header is the last row
 2. Select that row as header
 3. Proceed with merge
 
 **Expected Result**:
+
 - System handles case gracefully
 - No data rows to merge (0 data rows)
 - Existing data in main file is preserved
@@ -165,8 +186,8 @@ This creates:
 
 ```typescript
 interface AppState {
-  mainFileHeaderRow: number | null      // 1-based index
-  productsFileHeaderRow: number | null  // 1-based index
+  mainFileHeaderRow: number | null // 1-based index
+  productsFileHeaderRow: number | null // 1-based index
   // ... other fields
 }
 ```
@@ -231,15 +252,19 @@ After implementation, verify:
 ## Common Issues and Solutions
 
 ### Issue: Preview not updating after file selection
+
 **Solution**: Ensure file data is loaded before rendering FileSelector component
 
 ### Issue: Dropdown shows wrong number of options
+
 **Solution**: Check that `fileData.length` is correctly passed to FileSelector
 
 ### Issue: Headers not extracted correctly
+
 **Solution**: Verify 1-based to 0-based index conversion in ColumnMapper
 
 ### Issue: Formatting lost in merged file
+
 **Solution**: Check that save logic preserves formatting for all original rows
 
 ## Performance Considerations

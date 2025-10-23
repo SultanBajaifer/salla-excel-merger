@@ -5,6 +5,7 @@ This document explains how to use the auto-update functionality and GitHub deplo
 ## Overview
 
 The application now includes:
+
 1. **Auto-update functionality** using `electron-updater`
 2. **GitHub Actions workflows** for automated building and releasing
 3. **GitHub Releases** as the update distribution mechanism
@@ -12,13 +13,16 @@ The application now includes:
 ## How Auto-Update Works
 
 ### For Users
+
 1. The application automatically checks for updates 3 seconds after launch
 2. If an update is available, a dialog appears in Arabic asking if they want to download
 3. After download completes, users can choose to restart and install immediately or later
 4. Updates install automatically on next app restart if "later" was chosen
 
 ### For Developers
+
 The auto-update system:
+
 - Only works in production builds (not in development)
 - Uses GitHub Releases to distribute updates
 - Downloads updates in the background
@@ -31,12 +35,14 @@ The auto-update system:
 **Trigger**: When you push a version tag (e.g., `v1.0.0`, `v1.2.3`)
 
 **What it does**:
+
 - Builds the application for Windows, macOS, and Linux
 - Creates a GitHub Release with the version number
 - Uploads installers as release assets
 - Publishes update manifests for auto-updater
 
 **Platforms built**:
+
 - **Windows**: `.exe` installer (NSIS)
 - **macOS**: `.dmg` installer
 - **Linux**: `.AppImage`, `.deb`, `.snap`
@@ -46,6 +52,7 @@ The auto-update system:
 **Trigger**: Push to `main` or `develop` branches, or pull requests
 
 **What it does**:
+
 - Runs linter to check code quality
 - Builds the application for all platforms
 - Creates build artifacts (stored for 7 days)
@@ -115,6 +122,7 @@ publish:
 ### Auto-Update Code in `src/main/index.ts`
 
 Key features:
+
 - Checks for updates on app start (after 3-second delay)
 - Shows Arabic dialogs for user interaction
 - Doesn't auto-download without user permission
@@ -159,6 +167,7 @@ Then install and run the built application.
 **Problem**: App doesn't show update notification
 
 **Solutions**:
+
 1. Ensure you're running a production build (not `npm run dev`)
 2. Check that version in `package.json` is lower than the latest release
 3. Verify the release has `latest.yml` (Windows), `latest-mac.yml` (macOS), or `latest-linux.yml` (Linux)
@@ -169,6 +178,7 @@ Then install and run the built application.
 **Problem**: Workflow fails during build
 
 **Solutions**:
+
 1. Check if all dependencies are in `package.json`
 2. Verify that `npm run build` works locally
 3. Check the GitHub Actions logs for specific error messages
@@ -179,6 +189,7 @@ Then install and run the built application.
 **Problem**: Tag is pushed but no release appears
 
 **Solutions**:
+
 1. Verify tag starts with 'v' (e.g., `v1.0.0`, not `1.0.0`)
 2. Check that the workflow file is in `.github/workflows/release.yml`
 3. Ensure the workflow has `tags: - 'v*.*.*'` trigger
@@ -189,6 +200,7 @@ Then install and run the built application.
 ### GitHub Token
 
 The workflows use `secrets.GITHUB_TOKEN` which is automatically provided by GitHub Actions. You don't need to create or configure this token - it's available by default with the necessary permissions to:
+
 - Create releases
 - Upload release assets
 - Read repository contents
@@ -198,6 +210,7 @@ The workflows use `secrets.GITHUB_TOKEN` which is automatically provided by GitH
 For production releases, you should add code signing:
 
 **Windows**: Add code signing certificate
+
 ```yaml
 win:
   certificateFile: path/to/certificate.pfx
@@ -205,6 +218,7 @@ win:
 ```
 
 **macOS**: Add Apple Developer ID
+
 ```yaml
 mac:
   notarize: true
@@ -220,9 +234,12 @@ Edit `src/main/index.ts`:
 
 ```typescript
 // Check for updates every 24 hours
-setInterval(() => {
-  checkForUpdates()
-}, 24 * 60 * 60 * 1000) // 24 hours in milliseconds
+setInterval(
+  () => {
+    checkForUpdates()
+  },
+  24 * 60 * 60 * 1000
+) // 24 hours in milliseconds
 ```
 
 ### Change Dialog Language
@@ -231,8 +248,8 @@ Update the dialog messages in `src/main/index.ts`:
 
 ```typescript
 dialog.showMessageBox({
-  title: 'Update Available',  // Change to your language
-  message: 'A new update is available',
+  title: 'Update Available', // Change to your language
+  message: 'A new update is available'
   // ...
 })
 ```
@@ -266,12 +283,14 @@ const version = window.electron.process.versions.electron
 ### Immediate Actions Required:
 
 1. **Update package.json**: Set the correct initial version
+
    ```bash
    cd /path/to/salla-excel-merger
    # Edit package.json to set version to "1.0.0"
    ```
 
 2. **Test the workflows**: Push to main branch to trigger dev build
+
    ```bash
    git add .
    git commit -m "Add auto-update and GitHub workflows"
@@ -295,6 +314,7 @@ const version = window.electron.process.versions.electron
 ## Support
 
 For issues with auto-update or deployment:
+
 1. Check GitHub Actions logs
 2. Review electron-updater documentation
 3. Check electron-builder documentation

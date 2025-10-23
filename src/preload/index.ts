@@ -11,7 +11,9 @@ const api = {
     data: unknown[][],
     mainFilePath: string,
     mainFileRowCount: number,
-    headerRowIndex: number
+    headerRowIndex: number,
+    clearFormattingFromRow: number | null,
+    preserveFirstRowFormatting: boolean
   ) =>
     ipcRenderer.invoke(
       'save-excel-file',
@@ -19,7 +21,9 @@ const api = {
       data,
       mainFilePath,
       mainFileRowCount,
-      headerRowIndex
+      headerRowIndex,
+      clearFormattingFromRow,
+      preserveFirstRowFormatting
     ),
   cleanExcelFile: (filePath: string) => ipcRenderer.invoke('clean-excel-file', filePath)
 }
