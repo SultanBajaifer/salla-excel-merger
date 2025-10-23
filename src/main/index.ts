@@ -221,13 +221,19 @@ app.whenReady().then(() => {
 
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
+        
+        // Determine how many rows from the original file to preserve formatting for
+        // We'll preserve formatting for rows that exist in the original file
+        const originalRowCount = originalWorksheet?.rowCount || 0
+        
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Copy formatting from original worksheet for title row (row 0) and header row (row 1) only if originalWorksheet exists
-          if (originalWorksheet && (rowIndex === 0 || rowIndex === 1)) {
+          // Copy formatting from original worksheet for rows that existed in the original file
+          // This preserves formatting for title rows, header rows, and any other styled rows
+          if (originalWorksheet && rowIndex < originalRowCount) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
-            if (originalRow) {
+            if (originalRow && originalRow.hasValues) {
               // Copy row height
               newRow.height = originalRow.height
 
@@ -261,8 +267,6 @@ app.whenReady().then(() => {
                   cell.numFmt = originalCell.numFmt
                 }
               })
-            } else {
-              console.warn('[save-excel-file] expected original row not found:', rowIndex + 1)
             }
           }
 
