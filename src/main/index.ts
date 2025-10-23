@@ -93,8 +93,8 @@ app.whenReady().then(() => {
       const worksheet = workbook.worksheets[0]
       const data: unknown[][] = []
 
-      // Read all rows
-      worksheet.eachRow((row) => {
+      // Read all rows including empty ones to preserve row numbers
+      worksheet.eachRow({ includeEmpty: true }, (row) => {
         const rowData: unknown[] = []
         row.eachCell({ includeEmpty: true }, (cell) => {
           const value = cell.value

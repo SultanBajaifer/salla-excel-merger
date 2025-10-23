@@ -25,9 +25,12 @@ interface AppState {
   mergedPreviewData: CellValue[][]
   currentView: 'main' | 'mapper' | 'preview'
 
-  // Tax and discount for price calculations
-  taxRate: number // الضريبة (e.g., 1.15 for 15% tax)
-  discountRate: number // التخفيض (e.g., 1.2 to divide by)
+  // Products file data start row (1-based index, e.g., 9 means data starts at row 9)
+  productsStartRow: number
+
+  // النسبة ١ and النسبة ٢ for price calculations
+  ratio1: number // النسبة ١ (e.g., 1.3 for 30% increase)
+  ratio2: number // النسبة ٢ (e.g., 1.2 for 20% increase)
 
   // Column to use for cost in price calculations
   costColumn: string | null
@@ -39,8 +42,9 @@ interface AppState {
   setColumnMappings: (mappings: ColumnMapping[]) => void
   setMergedPreviewData: (data: CellValue[][]) => void
   setCurrentView: (view: 'main' | 'mapper' | 'preview') => void
-  setTaxRate: (rate: number) => void
-  setDiscountRate: (rate: number) => void
+  setProductsStartRow: (row: number) => void
+  setRatio1: (rate: number) => void
+  setRatio2: (rate: number) => void
   setCostColumn: (column: string | null) => void
 }
 
@@ -52,8 +56,9 @@ export const useAppStore = create<AppState>((set) => ({
   columnMappings: [],
   mergedPreviewData: [],
   currentView: 'main',
-  taxRate: 1.15, // Default 15% tax
-  discountRate: 1.0, // Default no discount
+  productsStartRow: 2, // Default: data starts at row 2 (headers at row 1)
+  ratio1: 1.0, // Default: no change (النسبة ١)
+  ratio2: 1.0, // Default: no change (النسبة ٢)
   costColumn: null,
 
   setMainFilePath: (path) => set({ mainFilePath: path }),
@@ -63,8 +68,9 @@ export const useAppStore = create<AppState>((set) => ({
   setColumnMappings: (mappings) => set({ columnMappings: mappings }),
   setMergedPreviewData: (data) => set({ mergedPreviewData: data }),
   setCurrentView: (view) => set({ currentView: view }),
-  setTaxRate: (rate) => set({ taxRate: rate }),
-  setDiscountRate: (rate) => set({ discountRate: rate }),
+  setProductsStartRow: (row) => set({ productsStartRow: row }),
+  setRatio1: (rate) => set({ ratio1: rate }),
+  setRatio2: (rate) => set({ ratio2: rate }),
   setCostColumn: (column) => set({ costColumn: column })
 }))
 
