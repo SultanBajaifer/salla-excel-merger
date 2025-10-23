@@ -31,6 +31,10 @@ const ColumnMapper: React.FC = () => {
   const columnConfigs: ColumnConfig[] = [
     { name: 'أسم المنتج', category: 'required' },
     { name: 'الباركود', category: 'required' },
+    { name: 'وصف صفحة المنتج (SEO Page Description)', category: 'required' },
+    { name: 'اسم المنتج (غير قابل للتعديل)', category: 'required' },
+    { name: 'No. (غير قابل للتعديل)', category: 'required' },
+    { name: 'عنوان صفحة المنتج (SEO Page Title)', category: 'required' },
     { name: 'سعر المنتج', category: 'price' },
     { name: 'سعر التكلفة', category: 'price' },
     { name: 'السعر المخفض', category: 'price' }
@@ -104,7 +108,6 @@ const ColumnMapper: React.FC = () => {
       mainColumns.forEach((mainCol) => {
         const category = getColumnCategory(mainCol)
         const mapping = mappings[mainCol]
-
         if (category === 'price' && costColumn) {
           // Calculate price based on new formula:
           // سعر التكلفة = المجموع
@@ -129,6 +132,13 @@ const ColumnMapper: React.FC = () => {
         } else if (mapping) {
           // Map from new column
           const newColIndex = newColumns.indexOf(mapping)
+          const descriptionMessage =
+            'افضل المنتجات ألاصلية من متجر العناية والجمال كير اند بيوتي C&B'
+        // if mainCol is وصف صفحة المنتج (SEO Page Description) then add the descriptionMessage next to the mapped value
+        if (mainCol === 'وصف صفحة المنتج (SEO Page Description)') {
+          mergedRow.push(`${String(newRow[newColIndex] || '')} ${descriptionMessage}`.trim())
+        }
+
           if (newColIndex !== -1) {
             mergedRow.push(newRow[newColIndex])
           } else {
