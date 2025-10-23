@@ -25,7 +25,12 @@ interface AppState {
   mergedPreviewData: CellValue[][]
   currentView: 'main' | 'mapper' | 'preview' | 'cleaning'
 
+  // Header row indices (1-based, e.g., 1 means row 1 is the header)
+  mainFileHeaderRow: number | null
+  productsFileHeaderRow: number | null
+
   // Products file data start row (1-based index, e.g., 9 means data starts at row 9)
+  // DEPRECATED: Use productsFileHeaderRow instead
   productsStartRow: number
 
   // النسبة ١ and النسبة ٢ for price calculations
@@ -47,6 +52,8 @@ interface AppState {
   setColumnMappings: (mappings: ColumnMapping[]) => void
   setMergedPreviewData: (data: CellValue[][]) => void
   setCurrentView: (view: 'main' | 'mapper' | 'preview' | 'cleaning') => void
+  setMainFileHeaderRow: (row: number | null) => void
+  setProductsFileHeaderRow: (row: number | null) => void
   setProductsStartRow: (row: number) => void
   setRatio1: (rate: number) => void
   setRatio2: (rate: number) => void
@@ -64,7 +71,9 @@ export const useAppStore = create<AppState>((set) => ({
   columnMappings: [],
   mergedPreviewData: [],
   currentView: 'main',
-  productsStartRow: 2, // Default: data starts at row 2 (headers at row 1)
+  mainFileHeaderRow: null, // User must select header row
+  productsFileHeaderRow: null, // User must select header row
+  productsStartRow: 2, // Default: data starts at row 2 (headers at row 1) - DEPRECATED
   ratio1: 1.0, // Default: no change (النسبة ١)
   ratio2: 1.0, // Default: no change (النسبة ٢)
   costColumn: null,
@@ -79,6 +88,8 @@ export const useAppStore = create<AppState>((set) => ({
   setColumnMappings: (mappings) => set({ columnMappings: mappings }),
   setMergedPreviewData: (data) => set({ mergedPreviewData: data }),
   setCurrentView: (view) => set({ currentView: view }),
+  setMainFileHeaderRow: (row) => set({ mainFileHeaderRow: row }),
+  setProductsFileHeaderRow: (row) => set({ productsFileHeaderRow: row }),
   setProductsStartRow: (row) => set({ productsStartRow: row }),
   setRatio1: (rate) => set({ ratio1: rate }),
   setRatio2: (rate) => set({ ratio2: rate }),
