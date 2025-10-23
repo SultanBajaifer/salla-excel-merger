@@ -134,10 +134,10 @@ const ColumnMapper: React.FC = () => {
           const newColIndex = newColumns.indexOf(mapping)
           const descriptionMessage =
             'افضل المنتجات ألاصلية من متجر العناية والجمال كير اند بيوتي C&B'
-        // if mainCol is وصف صفحة المنتج (SEO Page Description) then add the descriptionMessage next to the mapped value
-        if (mainCol === 'وصف صفحة المنتج (SEO Page Description)') {
-          mergedRow.push(`${String(newRow[newColIndex] || '')} ${descriptionMessage}`.trim())
-        }
+          // if mainCol is وصف صفحة المنتج (SEO Page Description) then add the descriptionMessage next to the mapped value
+          if (mainCol === 'وصف صفحة المنتج (SEO Page Description)') {
+            mergedRow.push(`${String(newRow[newColIndex] || '')} ${descriptionMessage}`.trim())
+          }
 
           if (newColIndex !== -1) {
             mergedRow.push(newRow[newColIndex])

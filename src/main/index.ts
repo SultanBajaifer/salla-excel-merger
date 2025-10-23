@@ -159,8 +159,19 @@ app.whenReady().then(() => {
   // Excel file saving handler with formatting preservation
   ipcMain.handle(
     'save-excel-file',
-    async (_, filePath: string, data: unknown[][], mainFilePath: string) => {
-      console.log('[save-excel-file] invoked', { filePath, mainFilePath, rows: data?.length ?? 0 })
+    async (
+      _,
+      filePath: string,
+      data: unknown[][],
+      mainFilePath: string,
+      mainFileRowCount: number
+    ) => {
+      console.log('[save-excel-file] invoked', {
+        filePath,
+        mainFilePath,
+        rows: data?.length ?? 0,
+        mainFileRows: mainFileRowCount
+      })
       try {
         // Try to read the original main file to preserve formatting; if it fails or has no sheets, proceed without template
         let originalWorksheet: ExcelJS.Worksheet | undefined
@@ -221,17 +232,24 @@ app.whenReady().then(() => {
 
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
-        
-        // Determine how many rows from the original file to preserve formatting for
-        // We'll preserve formatting for rows that exist in the original file
-        const originalRowCount = originalWorksheet?.rowCount || 0
-        
+
+        // Only copy formatting for rows that came from the main file
+        // mainFileRowCount tells us how many rows in the merged data are from the original file
+        // Rows beyond that are new product rows and should have clean/default formatting
+        console.log(
+          '[save-excel-file] mainFileRowCount:',
+          mainFileRowCount,
+          'will preserve formatting for first',
+          mainFileRowCount,
+          'rows'
+        )
+
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Copy formatting from original worksheet for rows that existed in the original file
-          // This preserves formatting for title rows, header rows, and any other styled rows
-          if (originalWorksheet && rowIndex < originalRowCount) {
+          // Copy formatting ONLY for rows that came from the original main file
+          // New product rows (rowIndex >= mainFileRowCount) get clean/default formatting
+          if (originalWorksheet && rowIndex < mainFileRowCount) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
             if (originalRow && originalRow.hasValues) {
               // Copy row height
