@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
 import { execFile } from 'child_process'
@@ -8,7 +9,12 @@ import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
 
-function createWindow(): void {
+// Configure auto-updater
+autoUpdater.logger = console
+autoUpdater.autoDownload = false // Don't auto-download, ask user first
+autoUpdater.autoInstallOnAppQuit = true
+
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -39,6 +45,74 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
+}
+
+// Auto-updater event handlers
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for update...')
+})
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث متوفر',
+      message: `تحديث جديد متاح (${info.version})`,
+      detail: 'هل تريد تحميل التحديث الآن؟',
+      buttons: ['نعم', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate()
+      }
+    })
+})
+
+autoUpdater.on('update-not-available', () => {
+  console.log('Update not available.')
+})
+
+autoUpdater.on('error', (err) => {
+  console.error('Error in auto-updater:', err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = `Download speed: ${progressObj.bytesPerSecond}`
+  log_message = log_message + ` - Downloaded ${progressObj.percent}%`
+  log_message = log_message + ` (${progressObj.transferred}/${progressObj.total})`
+  console.log(log_message)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث جاهز',
+      message: 'تم تحميل التحديث بنجاح',
+      detail: 'سيتم تثبيت التحديث عند إعادة تشغيل التطبيق. هل تريد إعادة التشغيل الآن؟',
+      buttons: ['إعادة التشغيل', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall()
+      }
+    })
+})
+
+function checkForUpdates(): void {
+  // Don't check for updates in development
+  if (is.dev) {
+    console.log('Skipping update check in development mode')
+    return
+  }
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    console.error('Failed to check for updates:', err)
+  })
 }
 
 // This method will be called when Electron has finished
@@ -407,6 +481,11 @@ app.whenReady().then(() => {
   )
 
   createWindow()
+
+  // Check for updates after a short delay to let the app initialize
+  setTimeout(() => {
+    checkForUpdates()
+  }, 3000)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
