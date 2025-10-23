@@ -34,6 +34,10 @@ out
 *.tgz
 .eslintcache
 
-# Test files and scripts
-scripts/
+# Test files
 test-*.xlsx
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

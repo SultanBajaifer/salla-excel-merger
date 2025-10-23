@@ -22,10 +22,11 @@
    - معاينة البيانات المنظفة
    - مؤشر تحميل أثناء المعالجة
 
-2. **`src/renderer/src/services/excelCleaner.ts`**
-   - منطق تنظيف البيانات في TypeScript
-   - دالة `cleanExcelData()` لتنظيف بيانات Excel
-   - دالة `findHeaderRow()` لاكتشاف صف العناوين
+2. **`scripts/clean_excel.py`**
+   - سكريبت Python لتنظيف ملفات Excel
+   - يستخدم pandas و openpyxl لمعالجة أكثر قوة
+   - دالة `clean_excel()` لتنظيف بيانات Excel
+   - دالة لاكتشاف صف العناوين تلقائيًا
 
 3. **`CLEANING_FEATURE.md`**
    - وثائق شاملة للميزة الجديدة
@@ -34,7 +35,8 @@
 
 1. **`src/main/index.ts`**
    - إضافة IPC handler جديد: `clean-excel-file`
-   - معالجة تنظيف الملفات في main process
+   - تنفيذ سكريبت Python لتنظيف الملفات
+   - استخدام `execFile` لتشغيل السكريبت
    - حفظ الملف المنظف بصيغة `filename_cleaned.xlsx`
 
 2. **`src/preload/index.ts`** و **`src/preload/index.d.ts`**
@@ -62,31 +64,27 @@
    - إضافة قسم كامل عن ميزة التنظيف
    - شرح تفصيلي للمنطق المنفذ
 
-## منطق التنظيف
+## منطق التنظيف (Python Script)
 
 ### 1. اكتشاف صف العناوين
 
-```typescript
-function findHeaderRow(data: CellValue[][]): number {
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i]
-    const filledCells = row.filter((v) => v !== null && v !== '' && v !== undefined).length
-    if (filledCells >= 3) {
-      return i
-    }
-  }
-  return -1
-}
+```python
+# Find the first row with at least 3 non-empty cells (header row)
+header_row_idx = None
+for i, row in df.iterrows():
+    non_empty_count = row.count()
+    if non_empty_count >= 3:
+        header_row_idx = i
+        break
 ```
 
-النظام يبحث عن أول صف يحتوي على 3 خلايا غير فارغة على الأقل ويعتبره صف العناوين.
+السكريبت Python يبحث عن أول صف يحتوي على 3 خلايا غير فارغة على الأقل ويعتبره صف العناوين.
 
 ### 2. تنظيف القيم
 
-```typescript
-const cleanedRow = row.map((v) => 
-  typeof v === 'string' ? v.trim().replace(/\r|\n/g, ' ') : v
-)
+```python
+# Clean all cell values: trim whitespace and replace newlines
+df = df.map(lambda x: str(x).strip().replace('\r', ' ').replace('\n', ' ') if isinstance(x, str) else x)
 ```
 
 - إزالة المسافات من البداية والنهاية
@@ -94,30 +92,29 @@ const cleanedRow = row.map((v) =>
 
 ### 3. إزالة الصفوف الفارغة
 
-```typescript
-if (cleanedRow.some((v) => v !== null && v !== '' && v !== undefined)) {
-  rows.push(cleanedRow)
-}
+```python
+# Drop completely empty rows
+df = df.dropna(how='all', axis=0)
 ```
 
-يتم إضافة الصف فقط إذا كان يحتوي على قيمة واحدة غير فارغة على الأقل.
+يتم حذف جميع الصفوف التي لا تحتوي على أي بيانات.
 
 ### 4. إزالة الأعمدة الفارغة
 
-```typescript
-const validColumns = headers.map((_, colIndex) => {
-  const headerValid = headers[colIndex] !== null && headers[colIndex] !== ''
-  const hasData = rows.some((row) => {
-    const cell = row[colIndex]
-    return cell !== null && cell !== '' && cell !== undefined
-  })
-  return headerValid || hasData
-})
+```python
+# Drop completely empty columns
+df = df.dropna(how='all', axis=1)
 ```
 
-العمود يعتبر صالحًا إذا:
-- كان له عنوان غير فارغ، أو
-- يحتوي على بيانات في أي صف
+يتم حذف جميع الأعمدة التي لا تحتوي على أي بيانات.
+
+### 5. لماذا Python؟
+
+استخدام pandas و openpyxl يوفر:
+- معالجة أكثر قوة للملفات المعقدة
+- دعم أفضل للخلايا المدمجة
+- معالجة أدق للتنسيقات المختلفة
+- أداء أفضل مع الملفات الكبيرة
 
 ## واجهة المستخدم
 
@@ -194,14 +191,26 @@ Row 3: ["Product B", 200, 30, "Another product", "SKU002"]
 - ✅ TypeScript strict mode
 - ✅ ESLint rules
 - ✅ Prettier formatting
-- ✅ Electron + React + ExcelJS
+- ✅ Electron + React + Python
 - ✅ RTL (Right-to-Left) support
 - ✅ Arabic interface
+
+## المتطلبات
+
+### للمستخدم النهائي:
+- Python 3.x مثبت على النظام
+- مكتبة pandas (`pip install pandas`)
+- مكتبة openpyxl (`pip install openpyxl`)
+
+### للتطوير:
+- نفس المتطلبات أعلاه
+- Node.js 18+
+- npm
 
 ## ملاحظات التطوير
 
 1. الملف المنظف يُحفظ بصيغة `filename_cleaned.xlsx` في نفس المجلد
-2. يتم الحفاظ على RTL في الملف المنظف
-3. يتم تطبيق auto-sizing على الأعمدة
-4. الميزة لا تعدل الملف الأصلي
-5. يمكن استخدام الملف المنظف مباشرة في عملية الدمج
+2. السكريبت Python يتم تضمينه في التطبيق عبر `extraResources` في electron-builder
+3. الميزة لا تعدل الملف الأصلي
+4. يمكن استخدام الملف المنظف مباشرة في عملية الدمج
+5. في حالة فشل Python، يتم عرض رسالة خطأ واضحة للمستخدم

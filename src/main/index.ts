@@ -3,6 +3,10 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
+
+const execFileAsync = promisify(execFile)
 
 function createWindow(): void {
   // Create the browser window.
@@ -121,104 +125,33 @@ app.whenReady().then(() => {
     }
   })
 
-  // Clean Excel file handler
+  // Clean Excel file handler using Python script
   ipcMain.handle('clean-excel-file', async (_, filePath: string) => {
     try {
-      const workbook = new ExcelJS.Workbook()
-      await workbook.xlsx.readFile(filePath)
-      const sheet = workbook.worksheets[0]
+      // Determine the path to the Python script
+      // In production, resources are in the resources folder
+      // In development, we use the source location
+      const scriptPath = is.dev
+        ? join(__dirname, '../../scripts/clean_excel.py')
+        : join(process.resourcesPath, 'scripts', 'clean_excel.py')
 
-      if (!sheet) {
-        throw new Error('No worksheet found in the Excel file')
+      console.log('[clean-excel-file] Using Python script at:', scriptPath)
+      console.log('[clean-excel-file] Cleaning file:', filePath)
+
+      // Execute the Python script
+      const { stdout, stderr } = await execFileAsync('python3', [scriptPath, filePath])
+
+      if (stderr) {
+        console.warn('[clean-excel-file] Python stderr:', stderr)
       }
 
-      // Find the first valid header row (row with at least 3 non-empty cells)
-      let headerRowIndex = 1
-      for (let i = 1; i <= sheet.actualRowCount; i++) {
-        const row = sheet.getRow(i)
-        const values = Array.from(row.values as unknown[])
-        const filledCells = values.filter((v) => v !== null && v !== '' && v !== undefined).length
-        if (filledCells >= 3) {
-          headerRowIndex = i
-          break
-        }
-      }
+      // The Python script prints the cleaned file path to stdout
+      const cleanedPath = stdout.trim()
+      console.log('[clean-excel-file] File cleaned successfully:', cleanedPath)
 
-      const headers: unknown[] = []
-      const rows: unknown[][] = []
-
-      sheet.eachRow((row, rowNumber) => {
-        const values = Array.from(row.values as unknown[])
-          .slice(1) // ExcelJS includes empty first element
-          .map((v) => {
-            if (typeof v === 'string') {
-              return v.trim().replace(/\r|\n/g, ' ')
-            } else if (v && typeof v === 'object' && 'text' in v) {
-              return String((v as { text: unknown }).text || '')
-                .trim()
-                .replace(/\r|\n/g, ' ')
-            }
-            return v
-          })
-
-        // Skip completely empty rows
-        if (!values.some((v) => v !== null && v !== '' && v !== undefined)) {
-          return
-        }
-
-        if (rowNumber === headerRowIndex) {
-          headers.push(...values)
-        } else if (rowNumber > headerRowIndex) {
-          rows.push(values)
-        }
-      })
-
-      // Find valid columns (columns that have at least one non-empty value)
-      const validColumns = headers.map((_, i) => {
-        const headerValid = headers[i] !== null && headers[i] !== '' && headers[i] !== undefined
-        const hasData = rows.some((row) => {
-          const cell = row[i]
-          return cell !== null && cell !== '' && cell !== undefined
-        })
-        return headerValid || hasData
-      })
-
-      const filteredHeaders = headers.filter((_, i) => validColumns[i])
-      const filteredRows = rows.map((row) => row.filter((_, i) => validColumns[i]))
-
-      // Create new workbook with cleaned data
-      const newWorkbook = new ExcelJS.Workbook()
-      const newSheet = newWorkbook.addWorksheet('Cleaned Data')
-
-      // Add headers
-      newSheet.addRow(filteredHeaders)
-
-      // Add data rows
-      filteredRows.forEach((r) => newSheet.addRow(r))
-
-      // Auto-size columns
-      newSheet.columns.forEach((column) => {
-        let maxLength = 0
-        column.eachCell?.({ includeEmpty: true }, (cell) => {
-          const cellLength = cell.value ? cell.value.toString().length : 10
-          if (cellLength > maxLength) {
-            maxLength = cellLength
-          }
-        })
-        column.width = maxLength < 10 ? 10 : maxLength + 2
-      })
-
-      // Apply RTL
-      newSheet.views = [{ rightToLeft: true }]
-
-      // Generate cleaned file path
-      const cleanedPath = filePath.replace(/\.xlsx?$/i, '_cleaned.xlsx')
-      await newWorkbook.xlsx.writeFile(cleanedPath)
-
-      console.log('File cleaned successfully:', cleanedPath)
       return cleanedPath
     } catch (error) {
-      console.error('Error cleaning Excel file:', error)
+      console.error('[clean-excel-file] Error cleaning Excel file:', error)
       throw error
     }
   })
