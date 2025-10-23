@@ -3,6 +3,10 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
+
+const execFileAsync = promisify(execFile)
 
 function createWindow(): void {
   // Create the browser window.
@@ -117,6 +121,37 @@ app.whenReady().then(() => {
       return data
     } catch (error) {
       console.error('Error reading Excel file:', error)
+      throw error
+    }
+  })
+
+  // Clean Excel file handler using Python script
+  ipcMain.handle('clean-excel-file', async (_, filePath: string) => {
+    try {
+      // Determine the path to the Python script
+      // In production, resources are in the resources folder
+      // In development, we use the source location
+      const scriptPath = is.dev
+        ? join(__dirname, '../../scripts/clean_excel.py')
+        : join(process.resourcesPath, 'scripts', 'clean_excel.py')
+
+      console.log('[clean-excel-file] Using Python script at:', scriptPath)
+      console.log('[clean-excel-file] Cleaning file:', filePath)
+
+      // Execute the Python script
+      const { stdout, stderr } = await execFileAsync('python3', [scriptPath, filePath])
+
+      if (stderr) {
+        console.warn('[clean-excel-file] Python stderr:', stderr)
+      }
+
+      // The Python script prints the cleaned file path to stdout
+      const cleanedPath = stdout.trim()
+      console.log('[clean-excel-file] File cleaned successfully:', cleanedPath)
+
+      return cleanedPath
+    } catch (error) {
+      console.error('[clean-excel-file] Error cleaning Excel file:', error)
       throw error
     }
   })

@@ -4,6 +4,7 @@ import FileSelector from './components/FileSelector'
 import PreviewTable from './components/PreviewTable'
 import ColumnMapper from './components/ColumnMapper'
 import SaveButton from './components/SaveButton'
+import CleaningPage from './components/CleaningPage'
 
 function App(): React.JSX.Element {
   const {
@@ -101,20 +102,44 @@ function App(): React.JSX.Element {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">دمج ملفات Excel لمتجر سلة</h1>
           <p className="text-gray-600 mb-8">اختر ملفات Excel للدمج ومعاينة البيانات</p>
 
+          {/* Navigation to Cleaning Page */}
+          <div className="mb-6">
+            <button
+              onClick={() => setCurrentView('cleaning')}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg text-lg font-semibold"
+            >
+              تنظيف ملف الإكسل
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              هل لديك ملف إكسل يحتاج إلى تنظيف قبل المعالجة؟ استخدم هذه الأداة لتنظيفه تلقائيًا
+            </p>
+          </div>
+
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <FileSelector
               label="اختيار الملف الرئيسي"
               filePath={mainFilePath}
               onSelect={handleSelectMainFile}
             />
-            <FileSelector
-              label="اختيار ملف المنتجات الجديدة"
-              filePath={newProductsFilePath}
-              onSelect={handleSelectNewProductsFile}
-              showStartRow={true}
-              startRow={productsStartRow}
-              onStartRowChange={setProductsStartRow}
-            />
+            <div>
+              <FileSelector
+                label="اختيار ملف المنتجات الجديدة"
+                filePath={newProductsFilePath}
+                onSelect={handleSelectNewProductsFile}
+                showStartRow={true}
+                startRow={productsStartRow}
+                onStartRowChange={setProductsStartRow}
+              />
+              {newProductsFilePath && productsStartRow > 2 && (
+                <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    💡 نصيحة: إذا كان ملفك يحتوي على بيانات غير منظمة أو صفوف فارغة في الأعلى، يمكنك
+                    استخدام أداة &quot;تنظيف ملف الإكسل&quot; لتنظيفه تلقائيًا أولاً. هذا سيجعل
+                    البيانات تبدأ مباشرة من الصف الأول.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -192,6 +217,11 @@ function App(): React.JSX.Element {
         </div>
       </div>
     )
+  }
+
+  // Cleaning View
+  if (currentView === 'cleaning') {
+    return <CleaningPage />
   }
 
   return <div>عرض غير معروف</div>
