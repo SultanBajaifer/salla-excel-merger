@@ -137,12 +137,12 @@ const ColumnMapper: React.FC = () => {
           // if mainCol is وصف صفحة المنتج (SEO Page Description) then add the descriptionMessage next to the mapped value
           if (mainCol === 'وصف صفحة المنتج (SEO Page Description)') {
             mergedRow.push(`${String(newRow[newColIndex] || '')} ${descriptionMessage}`.trim())
-          }
-
-          if (newColIndex !== -1) {
-            mergedRow.push(newRow[newColIndex])
           } else {
-            mergedRow.push('')
+            if (newColIndex !== -1) {
+              mergedRow.push(newRow[newColIndex])
+            } else {
+              mergedRow.push('')
+            }
           }
         } else {
           // No mapping
