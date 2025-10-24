@@ -43,9 +43,11 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
+repository: https://github.com/SultanBajaifer/salla-excel-merger
 publish:
   provider: github
-  owner: SultanBajaifer
+  owner: https://github.com/SultanBajaifer
   repo: salla-excel-merger
-  releaseType: draft
-  token: $GH_TOKEN
+  releaseType: release
+  token: "${GH_TOKEN}"
+  private: false
