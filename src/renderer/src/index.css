@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  direction: rtl;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
