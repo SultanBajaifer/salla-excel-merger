@@ -1,7 +1,5 @@
 name: Build and Release
-permissions:
-  contents: write
-  packages: write
+permissions: write-all
 
 on:
   push:
@@ -25,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
