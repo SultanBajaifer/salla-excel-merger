@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*" # Triggers on version tags like v1.0.0, v1.2.3, etc.
-
+  workflow_dispatch:
 jobs:
   release:
     permissions: write-all
