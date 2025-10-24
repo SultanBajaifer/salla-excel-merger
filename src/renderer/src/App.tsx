@@ -14,13 +14,15 @@ function App(): React.JSX.Element {
     mainFileData,
     newProductsData,
     mergedPreviewData,
-    productsStartRow,
+    mainFileHeaderRow,
+    productsFileHeaderRow,
     setCurrentView,
     setMainFilePath,
     setNewProductsFilePath,
     setMainFileData,
     setNewProductsData,
-    setProductsStartRow
+    setMainFileHeaderRow,
+    setProductsFileHeaderRow
   } = useAppStore()
 
   const handleSelectMainFile = async (): Promise<void> => {
@@ -58,6 +60,14 @@ function App(): React.JSX.Element {
       alert('يرجى اختيار كلا الملفين أولاً')
       return
     }
+    if (!mainFileHeaderRow) {
+      alert('يرجى اختيار الصف الذي يحتوي على العناوين للملف الرئيسي')
+      return
+    }
+    if (!productsFileHeaderRow) {
+      alert('يرجى اختيار الصف الذي يحتوي على العناوين لملف المنتجات')
+      return
+    }
     setCurrentView('mapper')
   }
 
@@ -84,7 +94,15 @@ function App(): React.JSX.Element {
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
-        await window.api.saveExcelFile(outputPath, mergedPreviewData, mainFilePath)
+        // Pass the number of rows from main file and header row index
+        // So we know which rows to preserve formatting for (only title and header rows)
+        await window.api.saveExcelFile(
+          outputPath,
+          mergedPreviewData,
+          mainFilePath,
+          mainFileData.length,
+          mainFileHeaderRow || 1
+        )
         alert('تم حفظ الملف بنجاح')
         setCurrentView('main')
       }
@@ -120,17 +138,22 @@ function App(): React.JSX.Element {
               label="اختيار الملف الرئيسي"
               filePath={mainFilePath}
               onSelect={handleSelectMainFile}
+              fileData={mainFileData}
+              headerRow={mainFileHeaderRow}
+              onHeaderRowChange={setMainFileHeaderRow}
+              headerLabel="حدد الصف الذي يحتوي على العناوين (الملف الرئيسي)"
             />
             <div>
               <FileSelector
                 label="اختيار ملف المنتجات الجديدة"
                 filePath={newProductsFilePath}
                 onSelect={handleSelectNewProductsFile}
-                showStartRow={true}
-                startRow={productsStartRow}
-                onStartRowChange={setProductsStartRow}
+                fileData={newProductsData}
+                headerRow={productsFileHeaderRow}
+                onHeaderRowChange={setProductsFileHeaderRow}
+                headerLabel="حدد الصف الذي يحتوي على العناوين (ملف المنتجات)"
               />
-              {newProductsFilePath && productsStartRow > 2 && (
+              {newProductsFilePath && productsFileHeaderRow && productsFileHeaderRow > 2 && (
                 <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-800">
                     💡 نصيحة: إذا كان ملفك يحتوي على بيانات غير منظمة أو صفوف فارغة في الأعلى، يمكنك
@@ -144,31 +167,52 @@ function App(): React.JSX.Element {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <PreviewTable data={mainFileData} title="معاينة الملف الرئيسي" maxRows={5} />
-              {mainFileData.length > 0 && (
-                <p className="text-xs text-gray-500 mt-2 bg-yellow-50 p-2 rounded border border-yellow-200">
-                  ملاحظة: الصف الأول هو صف العنوان وسيتم الحفاظ عليه في الملف النهائي
-                </p>
+              {mainFileHeaderRow && mainFileData.length > 0 ? (
+                <>
+                  <PreviewTable
+                    data={[
+                      mainFileData[mainFileHeaderRow - 1] || [], // Header row
+                      ...mainFileData.slice(mainFileHeaderRow, mainFileHeaderRow + 5) // First 5 data rows
+                    ]}
+                    title="معاينة الملف الرئيسي"
+                    maxRows={5}
+                  />
+                  <p className="text-xs text-gray-500 mt-2 bg-yellow-50 p-2 rounded border border-yellow-200">
+                    ملاحظة: العناوين في الصف {mainFileHeaderRow}، والبيانات تبدأ من الصف{' '}
+                    {mainFileHeaderRow + 1}
+                    {mainFileHeaderRow > 1 && '. الصفوف أعلاه سيتم الحفاظ عليها في الملف النهائي'}
+                  </p>
+                </>
+              ) : (
+                mainFileData.length > 0 && (
+                  <p className="text-sm text-gray-500 bg-yellow-50 p-4 rounded border border-yellow-200">
+                    يرجى اختيار صف العناوين للملف الرئيسي
+                  </p>
+                )
               )}
             </div>
             <div>
-              <PreviewTable
-                data={
-                  newProductsData.length > 0 && productsStartRow > 1
-                    ? [
-                        newProductsData[productsStartRow - 2] || [], // Header row
-                        ...newProductsData.slice(productsStartRow - 1, productsStartRow + 4) // First 5 data rows
-                      ]
-                    : newProductsData.slice(0, 6)
-                }
-                title="معاينة المنتجات الجديدة"
-                maxRows={5}
-              />
-              {newProductsData.length > 0 && productsStartRow > 1 && (
-                <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded border border-blue-200">
-                  ملاحظة: العناوين في الصف {productsStartRow - 1}، والبيانات تبدأ من الصف{' '}
-                  {productsStartRow}.
-                </p>
+              {productsFileHeaderRow && newProductsData.length > 0 ? (
+                <>
+                  <PreviewTable
+                    data={[
+                      newProductsData[productsFileHeaderRow - 1] || [], // Header row
+                      ...newProductsData.slice(productsFileHeaderRow, productsFileHeaderRow + 5) // First 5 data rows
+                    ]}
+                    title="معاينة المنتجات الجديدة"
+                    maxRows={5}
+                  />
+                  <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded border border-blue-200">
+                    ملاحظة: العناوين في الصف {productsFileHeaderRow}، والبيانات تبدأ من الصف{' '}
+                    {productsFileHeaderRow + 1}
+                  </p>
+                </>
+              ) : (
+                newProductsData.length > 0 && (
+                  <p className="text-sm text-gray-500 bg-blue-50 p-4 rounded border border-blue-200">
+                    يرجى اختيار صف العناوين لملف المنتجات
+                  </p>
+                )
               )}
             </div>
           </div>
@@ -176,7 +220,12 @@ function App(): React.JSX.Element {
           <div className="flex justify-center">
             <button
               onClick={handleOpenMapper}
-              disabled={!mainFileData.length || !newProductsData.length}
+              disabled={
+                !mainFileData.length ||
+                !newProductsData.length ||
+                !mainFileHeaderRow ||
+                !productsFileHeaderRow
+              }
               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               فتح أداة مطابقة الأعمدة

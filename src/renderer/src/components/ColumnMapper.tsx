@@ -7,6 +7,8 @@ const ColumnMapper: React.FC = () => {
   const {
     newProductsData,
     mainFileData,
+    mainFileHeaderRow,
+    productsFileHeaderRow,
     productsStartRow,
     setCurrentView,
     setColumnMappings,
@@ -17,20 +19,22 @@ const ColumnMapper: React.FC = () => {
     setCostColumn
   } = useAppStore()
 
-  // Extract column headers
-  // For products file: headers are one row before the data start row
-  // Note: productsStartRow is 1-based (e.g., 9 means data starts at row 9 in Excel, headers at row 8)
-  // So if productsStartRow = 9, headers are at Excel row 8, which is array index 7 = productsStartRow - 2
-  const newColumnsRowIndex = productsStartRow - 2 // Headers are one row before data
-  const newColumns = (newProductsData[newColumnsRowIndex] || []).map((col) => String(col))
+  // Extract column headers using the user-selected header rows
+  // Header rows are 1-based, so we need to convert to 0-based array index
+  const mainHeaderIndex = (mainFileHeaderRow || 2) - 1 // Default to row 2 if not set (for backward compatibility)
+  const productsHeaderIndex = (productsFileHeaderRow || productsStartRow - 1) - 1 // Use new field or fall back to old logic
 
-  // Main file: skip first row as it's the title row, row 1 is header (0-indexed)
-  const mainColumns = (mainFileData[1] || []).map((col) => String(col))
+  const mainColumns = (mainFileData[mainHeaderIndex] || []).map((col) => String(col))
+  const newColumns = (newProductsData[productsHeaderIndex] || []).map((col) => String(col))
 
   // Define column configurations
   const columnConfigs: ColumnConfig[] = [
     { name: 'أسم المنتج', category: 'required' },
     { name: 'الباركود', category: 'required' },
+    { name: 'وصف صفحة المنتج (SEO Page Description)', category: 'required' },
+    { name: 'اسم المنتج (غير قابل للتعديل)', category: 'required' },
+    { name: 'No. (غير قابل للتعديل)', category: 'required' },
+    { name: 'عنوان صفحة المنتج (SEO Page Title)', category: 'required' },
     { name: 'سعر المنتج', category: 'price' },
     { name: 'سعر التكلفة', category: 'price' },
     { name: 'السعر المخفض', category: 'price' }
@@ -77,24 +81,25 @@ const ColumnMapper: React.FC = () => {
     // Create merged data
     const mergedData: CellValue[][] = []
 
-    // Add title row from main file (row 0)
-    if (mainFileData[0]) {
-      mergedData.push(mainFileData[0])
+    // Add all rows BEFORE the header row from main file (preserve original structure)
+    for (let i = 0; i < mainHeaderIndex; i++) {
+      if (mainFileData[i]) {
+        mergedData.push(mainFileData[i])
+      }
     }
 
-    // Add header row (row 1 from main file)
+    // Add header row from main file
     mergedData.push(mainColumns)
 
-    // Add existing data rows from main file (skip title and header rows)
-    const existingRows = mainFileData.slice(2)
+    // Add existing data rows from main file (rows after the header)
+    const existingRows = mainFileData.slice(mainHeaderIndex + 1)
     existingRows.forEach((row) => {
       mergedData.push(row)
     })
 
-    // Process each row from new products (skip rows before productsStartRow)
-    // productsStartRow is 1-based Excel row number where data starts
-    // So if productsStartRow = 9, data starts at array index 8 = productsStartRow - 1
-    const newRows = newProductsData.slice(productsStartRow - 1)
+    // Process each row from new products (data rows start after the header row)
+    // Header is at productsHeaderIndex (0-based), so data starts at productsHeaderIndex + 1
+    const newRows = newProductsData.slice(productsHeaderIndex + 1)
     newRows.forEach((newRow) => {
       const mergedRow: CellValue[] = []
       const costColIndex = costColumn ? newColumns.indexOf(costColumn) : -1
@@ -103,7 +108,6 @@ const ColumnMapper: React.FC = () => {
       mainColumns.forEach((mainCol) => {
         const category = getColumnCategory(mainCol)
         const mapping = mappings[mainCol]
-
         if (category === 'price' && costColumn) {
           // Calculate price based on new formula:
           // سعر التكلفة = المجموع
@@ -128,6 +132,13 @@ const ColumnMapper: React.FC = () => {
         } else if (mapping) {
           // Map from new column
           const newColIndex = newColumns.indexOf(mapping)
+          const descriptionMessage =
+            'افضل المنتجات ألاصلية من متجر العناية والجمال كير اند بيوتي C&B'
+          // if mainCol is وصف صفحة المنتج (SEO Page Description) then add the descriptionMessage next to the mapped value
+          if (mainCol === 'وصف صفحة المنتج (SEO Page Description)') {
+            mergedRow.push(`${String(newRow[newColIndex] || '')} ${descriptionMessage}`.trim())
+          }
+
           if (newColIndex !== -1) {
             mergedRow.push(newRow[newColIndex])
           } else {

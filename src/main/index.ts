@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
 import { execFile } from 'child_process'
@@ -8,7 +9,12 @@ import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
 
-function createWindow(): void {
+// Configure auto-updater
+autoUpdater.logger = console
+autoUpdater.autoDownload = false // Don't auto-download, ask user first
+autoUpdater.autoInstallOnAppQuit = true
+
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -39,6 +45,74 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
+}
+
+// Auto-updater event handlers
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for update...')
+})
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث متوفر',
+      message: `تحديث جديد متاح (${info.version})`,
+      detail: 'هل تريد تحميل التحديث الآن؟',
+      buttons: ['نعم', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate()
+      }
+    })
+})
+
+autoUpdater.on('update-not-available', () => {
+  console.log('Update not available.')
+})
+
+autoUpdater.on('error', (err) => {
+  console.error('Error in auto-updater:', err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = `Download speed: ${progressObj.bytesPerSecond}`
+  log_message = log_message + ` - Downloaded ${progressObj.percent}%`
+  log_message = log_message + ` (${progressObj.transferred}/${progressObj.total})`
+  console.log(log_message)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث جاهز',
+      message: 'تم تحميل التحديث بنجاح',
+      detail: 'سيتم تثبيت التحديث عند إعادة تشغيل التطبيق. هل تريد إعادة التشغيل الآن؟',
+      buttons: ['إعادة التشغيل', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall()
+      }
+    })
+})
+
+function checkForUpdates(): void {
+  // Don't check for updates in development
+  if (is.dev) {
+    console.log('Skipping update check in development mode')
+    return
+  }
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    console.error('Failed to check for updates:', err)
+  })
 }
 
 // This method will be called when Electron has finished
@@ -159,8 +233,21 @@ app.whenReady().then(() => {
   // Excel file saving handler with formatting preservation
   ipcMain.handle(
     'save-excel-file',
-    async (_, filePath: string, data: unknown[][], mainFilePath: string) => {
-      console.log('[save-excel-file] invoked', { filePath, mainFilePath, rows: data?.length ?? 0 })
+    async (
+      _,
+      filePath: string,
+      data: unknown[][],
+      mainFilePath: string,
+      mainFileRowCount: number,
+      headerRowIndex: number
+    ) => {
+      console.log('[save-excel-file] invoked', {
+        filePath,
+        mainFilePath,
+        rows: data?.length ?? 0,
+        mainFileRows: mainFileRowCount,
+        headerRow: headerRowIndex
+      })
       try {
         // Try to read the original main file to preserve formatting; if it fails or has no sheets, proceed without template
         let originalWorksheet: ExcelJS.Worksheet | undefined
@@ -221,13 +308,27 @@ app.whenReady().then(() => {
 
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
+
+        // Preserve formatting for ALL rows from the original main file (up to mainFileRowCount)
+        // This includes all rows above the header, the header row itself, and original data rows
+        // New product rows (after mainFileRowCount) will have clean/default formatting
+        console.log(
+          '[save-excel-file] will preserve formatting for first',
+          mainFileRowCount,
+          'rows (all original file rows)'
+        )
+
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Copy formatting from original worksheet for title row (row 0) and header row (row 1) only if originalWorksheet exists
-          if (originalWorksheet && (rowIndex === 0 || rowIndex === 1)) {
+          // Determine if this row is the header row (0-based index)
+          const isHeaderRow = rowIndex === headerRowIndex - 1
+
+          // Copy formatting for all rows that came from the original main file
+          // This preserves the original file's appearance for all its rows
+          if (originalWorksheet && rowIndex < mainFileRowCount) {
             const originalRow = originalWorksheet.getRow(rowIndex + 1)
-            if (originalRow) {
+            if (originalRow && originalRow.hasValues) {
               // Copy row height
               newRow.height = originalRow.height
 
@@ -236,9 +337,23 @@ app.whenReady().then(() => {
                 const originalCell = originalRow.getCell(colNumber)
                 if (!originalCell) return
 
-                // Copy font
-                if (originalCell.font) {
-                  cell.font = { ...originalCell.font }
+                // For data rows (not header), remove bold, italic, and strikethrough
+                // Header row keeps its original formatting including bold
+                if (!isHeaderRow && rowIndex >= headerRowIndex) {
+                  // This is a data row - clean formatting but preserve some properties
+                  if (originalCell.font) {
+                    cell.font = {
+                      ...originalCell.font,
+                      bold: false,
+                      italic: false,
+                      strike: false
+                    }
+                  }
+                } else {
+                  // Copy font as-is for title rows and header row
+                  if (originalCell.font) {
+                    cell.font = { ...originalCell.font }
+                  }
                 }
 
                 // Copy fill
@@ -261,10 +376,9 @@ app.whenReady().then(() => {
                   cell.numFmt = originalCell.numFmt
                 }
               })
-            } else {
-              console.warn('[save-excel-file] expected original row not found:', rowIndex + 1)
             }
           }
+          // New product rows (rowIndex >= mainFileRowCount) automatically get clean/default formatting
 
           // Log the first few rows for debugging
           if (rowIndex < 3) {
@@ -273,6 +387,7 @@ app.whenReady().then(() => {
         })
 
         // Merge the first row across all used columns and ensure it becomes a single cell with one value
+        // UNLESS the first cell contains "No. (غير قابل للتعديل)" - in that case, skip merging
         const firstRowIndex = 1
         const totalCols = Math.max(worksheet.columnCount, data[0]?.length ?? 1)
         console.log(
@@ -303,63 +418,76 @@ app.whenReady().then(() => {
         const titleValue = (existingValues?.[1] ?? data[0]?.[0] ?? '') as ExcelJS.CellValue
         console.log('[save-excel-file] titleValue determined:', titleValue)
 
-        // Unmerge any existing merges that intersect the first row to avoid merge conflicts
-        if (totalCols > 1) {
-          try {
-            const range = `A${firstRowIndex}:${colNumToLetter(totalCols)}${firstRowIndex}`
-            console.log('[save-excel-file] attempting to unmerge range (if any):', range)
-            worksheet.unMergeCells(range)
-          } catch (err) {
-            console.warn('[save-excel-file] unmergeCells failed or nothing to unmerge:', err)
+        // Check if the first cell contains "No. (غير قابل للتعديل)"
+        // If so, skip merging, centering, and clearing
+        const titleValueStr = String(titleValue || '').trim()
+        const skipMerging = titleValueStr.includes('No. (غير قابل للتعديل)')
+        console.log('[save-excel-file] skipMerging:', skipMerging, 'titleValue:', titleValueStr)
+
+        if (!skipMerging) {
+          // Unmerge any existing merges that intersect the first row to avoid merge conflicts
+          if (totalCols > 1) {
+            try {
+              const range = `A${firstRowIndex}:${colNumToLetter(totalCols)}${firstRowIndex}`
+              console.log('[save-excel-file] attempting to unmerge range (if any):', range)
+              worksheet.unMergeCells(range)
+            } catch (err) {
+              console.warn('[save-excel-file] unmergeCells failed or nothing to unmerge:', err)
+            }
           }
-        }
 
-        // Clear other cells in the first row so the merge will be clean. Keep only the top-left cell's value.
-        for (let c = 2; c <= totalCols; c++) {
-          const cell = firstRow.getCell(c)
-          cell.value = null
-          // best-effort clear style properties that might interfere; leave undefined-safe properties alone
-          try {
-            cell.style = {}
-          } catch {
-            // ignore style clear errors
+          // Clear other cells in the first row so the merge will be clean. Keep only the top-left cell's value.
+          for (let c = 2; c <= totalCols; c++) {
+            const cell = firstRow.getCell(c)
+            cell.value = null
+            // best-effort clear style properties that might interfere; leave undefined-safe properties alone
+            try {
+              cell.style = {}
+            } catch {
+              // ignore style clear errors
+            }
           }
-        }
 
-        // Set the top-left cell value before merging
-        const topLeft = firstRow.getCell(1)
-        topLeft.value = titleValue
+          // Set the top-left cell value before merging
+          const topLeft = firstRow.getCell(1)
+          topLeft.value = titleValue
 
-        // Merge only if there's more than one column
-        if (totalCols > 1) {
-          console.log(
-            '[save-excel-file] merging first row from A1 to',
-            colNumToLetter(totalCols) + '1'
-          )
-          worksheet.mergeCells(firstRowIndex, 1, firstRowIndex, totalCols)
-        } else {
-          console.log('[save-excel-file] only one column, skipping merge')
-        }
-
-        // After merging, always reference the merged master cell (A1)
-        const titleCell = worksheet.getCell(firstRowIndex, 1)
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-
-        // Preserve some original styling for the merged title cell if available
-        if (originalWorksheet) {
-          const origFirstCell = originalWorksheet.getRow(1)?.getCell(1)
-          if (origFirstCell) {
-            if (origFirstCell.font) titleCell.font = { ...origFirstCell.font }
-            if (origFirstCell.fill) titleCell.fill = { ...origFirstCell.fill }
-            if (origFirstCell.border) titleCell.border = { ...origFirstCell.border }
-            if (origFirstCell.alignment)
-              titleCell.alignment = { ...titleCell.alignment, ...origFirstCell.alignment }
-            console.log('[save-excel-file] applied original title cell styles')
-          } else {
+          // Merge only if there's more than one column
+          if (totalCols > 1) {
             console.log(
-              '[save-excel-file] original first cell not found; skipped applying original title styles'
+              '[save-excel-file] merging first row from A1 to',
+              colNumToLetter(totalCols) + '1'
             )
+            worksheet.mergeCells(firstRowIndex, 1, firstRowIndex, totalCols)
+          } else {
+            console.log('[save-excel-file] only one column, skipping merge')
           }
+
+          // After merging, always reference the merged master cell (A1)
+          const titleCell = worksheet.getCell(firstRowIndex, 1)
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+
+          // Preserve some original styling for the merged title cell if available
+          if (originalWorksheet) {
+            const origFirstCell = originalWorksheet.getRow(1)?.getCell(1)
+            if (origFirstCell) {
+              if (origFirstCell.font) titleCell.font = { ...origFirstCell.font }
+              if (origFirstCell.fill) titleCell.fill = { ...origFirstCell.fill }
+              if (origFirstCell.border) titleCell.border = { ...origFirstCell.border }
+              if (origFirstCell.alignment)
+                titleCell.alignment = { ...titleCell.alignment, ...origFirstCell.alignment }
+              console.log('[save-excel-file] applied original title cell styles')
+            } else {
+              console.log(
+                '[save-excel-file] original first cell not found; skipped applying original title styles'
+              )
+            }
+          }
+        } else {
+          console.log(
+            '[save-excel-file] skipping merge/center/clear because first cell contains "No. (غير قابل للتعديل)"'
+          )
+          // Keep the first row as-is without merging or centering
         }
 
         // Apply RTL to worksheet
@@ -381,6 +509,11 @@ app.whenReady().then(() => {
   )
 
   createWindow()
+
+  // Check for updates after a short delay to let the app initialize
+  setTimeout(() => {
+    checkForUpdates()
+  }, 3000)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

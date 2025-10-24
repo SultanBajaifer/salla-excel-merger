@@ -6,8 +6,21 @@ const api = {
   selectFile: () => ipcRenderer.invoke('select-file'),
   saveFile: (defaultPath: string) => ipcRenderer.invoke('save-file', defaultPath),
   readExcelFile: (filePath: string) => ipcRenderer.invoke('read-excel-file', filePath),
-  saveExcelFile: (filePath: string, data: unknown[][], mainFilePath: string) =>
-    ipcRenderer.invoke('save-excel-file', filePath, data, mainFilePath),
+  saveExcelFile: (
+    filePath: string,
+    data: unknown[][],
+    mainFilePath: string,
+    mainFileRowCount: number,
+    headerRowIndex: number
+  ) =>
+    ipcRenderer.invoke(
+      'save-excel-file',
+      filePath,
+      data,
+      mainFilePath,
+      mainFileRowCount,
+      headerRowIndex
+    ),
   cleanExcelFile: (filePath: string) => ipcRenderer.invoke('clean-excel-file', filePath)
 }
 
