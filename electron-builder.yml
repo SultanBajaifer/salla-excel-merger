@@ -48,5 +48,5 @@ publish:
   owner: SultanBajaifer
   repo: salla-excel-merger
   releaseType: release
-  token: "${GH_TOKEN}"
+  token: "${env.GH_TOKEN}"
   private: false

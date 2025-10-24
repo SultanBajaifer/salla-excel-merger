@@ -28,6 +28,11 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
 
+      - name: Create .env file
+        run: |
+          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+          type .env
+
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
