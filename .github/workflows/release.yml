@@ -1,58 +1,35 @@
-name: Build and Release
-permissions: write-all
+name: Build/release
 
-on:
-  push:
-    tags:
-      - "v*.*.*" # Triggers on version tags like v1.0.0, v1.2.3, etc.
-  workflow_dispatch:
+on: push
+
 jobs:
   release:
-    permissions: write-all
     runs-on: ${{ matrix.os }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
         with:
-          fetch-depth: 0
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          node-version: 20
+      - uses: actions/setup-python@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          python-version: "3.9"
+          cache: "pip" # caching pip dependencies
+      - run: pip install -r requirements.txt
 
-      - name: Install dependencies
-        run: npm ci
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Create .env file
-        run: |
-          echo "GH_TOKEN=${{ secrets.GH_TOKEN }}" > .env
-          type .env
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.github_token }}
 
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
