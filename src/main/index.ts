@@ -321,6 +321,9 @@ app.whenReady().then(() => {
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
+          // Determine if this row is the header row (0-based index)
+          const isHeaderRow = rowIndex === headerRowIndex - 1
+
           // Copy formatting for all rows that came from the original main file
           // This preserves the original file's appearance for all its rows
           if (originalWorksheet && rowIndex < mainFileRowCount) {
@@ -334,9 +337,23 @@ app.whenReady().then(() => {
                 const originalCell = originalRow.getCell(colNumber)
                 if (!originalCell) return
 
-                // Copy font
-                if (originalCell.font) {
-                  cell.font = { ...originalCell.font }
+                // For data rows (not header), remove bold, italic, and strikethrough
+                // Header row keeps its original formatting including bold
+                if (!isHeaderRow && rowIndex >= headerRowIndex) {
+                  // This is a data row - clean formatting but preserve some properties
+                  if (originalCell.font) {
+                    cell.font = {
+                      ...originalCell.font,
+                      bold: false,
+                      italic: false,
+                      strike: false
+                    }
+                  }
+                } else {
+                  // Copy font as-is for title rows and header row
+                  if (originalCell.font) {
+                    cell.font = { ...originalCell.font }
+                  }
                 }
 
                 // Copy fill
@@ -370,6 +387,7 @@ app.whenReady().then(() => {
         })
 
         // Merge the first row across all used columns and ensure it becomes a single cell with one value
+        // UNLESS the first cell contains "No. (غير قابل للتعديل)" - in that case, skip merging
         const firstRowIndex = 1
         const totalCols = Math.max(worksheet.columnCount, data[0]?.length ?? 1)
         console.log(
@@ -400,63 +418,76 @@ app.whenReady().then(() => {
         const titleValue = (existingValues?.[1] ?? data[0]?.[0] ?? '') as ExcelJS.CellValue
         console.log('[save-excel-file] titleValue determined:', titleValue)
 
-        // Unmerge any existing merges that intersect the first row to avoid merge conflicts
-        if (totalCols > 1) {
-          try {
-            const range = `A${firstRowIndex}:${colNumToLetter(totalCols)}${firstRowIndex}`
-            console.log('[save-excel-file] attempting to unmerge range (if any):', range)
-            worksheet.unMergeCells(range)
-          } catch (err) {
-            console.warn('[save-excel-file] unmergeCells failed or nothing to unmerge:', err)
+        // Check if the first cell contains "No. (غير قابل للتعديل)"
+        // If so, skip merging, centering, and clearing
+        const titleValueStr = String(titleValue || '').trim()
+        const skipMerging = titleValueStr.includes('No. (غير قابل للتعديل)')
+        console.log('[save-excel-file] skipMerging:', skipMerging, 'titleValue:', titleValueStr)
+
+        if (!skipMerging) {
+          // Unmerge any existing merges that intersect the first row to avoid merge conflicts
+          if (totalCols > 1) {
+            try {
+              const range = `A${firstRowIndex}:${colNumToLetter(totalCols)}${firstRowIndex}`
+              console.log('[save-excel-file] attempting to unmerge range (if any):', range)
+              worksheet.unMergeCells(range)
+            } catch (err) {
+              console.warn('[save-excel-file] unmergeCells failed or nothing to unmerge:', err)
+            }
           }
-        }
 
-        // Clear other cells in the first row so the merge will be clean. Keep only the top-left cell's value.
-        for (let c = 2; c <= totalCols; c++) {
-          const cell = firstRow.getCell(c)
-          cell.value = null
-          // best-effort clear style properties that might interfere; leave undefined-safe properties alone
-          try {
-            cell.style = {}
-          } catch {
-            // ignore style clear errors
+          // Clear other cells in the first row so the merge will be clean. Keep only the top-left cell's value.
+          for (let c = 2; c <= totalCols; c++) {
+            const cell = firstRow.getCell(c)
+            cell.value = null
+            // best-effort clear style properties that might interfere; leave undefined-safe properties alone
+            try {
+              cell.style = {}
+            } catch {
+              // ignore style clear errors
+            }
           }
-        }
 
-        // Set the top-left cell value before merging
-        const topLeft = firstRow.getCell(1)
-        topLeft.value = titleValue
+          // Set the top-left cell value before merging
+          const topLeft = firstRow.getCell(1)
+          topLeft.value = titleValue
 
-        // Merge only if there's more than one column
-        if (totalCols > 1) {
-          console.log(
-            '[save-excel-file] merging first row from A1 to',
-            colNumToLetter(totalCols) + '1'
-          )
-          worksheet.mergeCells(firstRowIndex, 1, firstRowIndex, totalCols)
-        } else {
-          console.log('[save-excel-file] only one column, skipping merge')
-        }
-
-        // After merging, always reference the merged master cell (A1)
-        const titleCell = worksheet.getCell(firstRowIndex, 1)
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-
-        // Preserve some original styling for the merged title cell if available
-        if (originalWorksheet) {
-          const origFirstCell = originalWorksheet.getRow(1)?.getCell(1)
-          if (origFirstCell) {
-            if (origFirstCell.font) titleCell.font = { ...origFirstCell.font }
-            if (origFirstCell.fill) titleCell.fill = { ...origFirstCell.fill }
-            if (origFirstCell.border) titleCell.border = { ...origFirstCell.border }
-            if (origFirstCell.alignment)
-              titleCell.alignment = { ...titleCell.alignment, ...origFirstCell.alignment }
-            console.log('[save-excel-file] applied original title cell styles')
-          } else {
+          // Merge only if there's more than one column
+          if (totalCols > 1) {
             console.log(
-              '[save-excel-file] original first cell not found; skipped applying original title styles'
+              '[save-excel-file] merging first row from A1 to',
+              colNumToLetter(totalCols) + '1'
             )
+            worksheet.mergeCells(firstRowIndex, 1, firstRowIndex, totalCols)
+          } else {
+            console.log('[save-excel-file] only one column, skipping merge')
           }
+
+          // After merging, always reference the merged master cell (A1)
+          const titleCell = worksheet.getCell(firstRowIndex, 1)
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+
+          // Preserve some original styling for the merged title cell if available
+          if (originalWorksheet) {
+            const origFirstCell = originalWorksheet.getRow(1)?.getCell(1)
+            if (origFirstCell) {
+              if (origFirstCell.font) titleCell.font = { ...origFirstCell.font }
+              if (origFirstCell.fill) titleCell.fill = { ...origFirstCell.fill }
+              if (origFirstCell.border) titleCell.border = { ...origFirstCell.border }
+              if (origFirstCell.alignment)
+                titleCell.alignment = { ...titleCell.alignment, ...origFirstCell.alignment }
+              console.log('[save-excel-file] applied original title cell styles')
+            } else {
+              console.log(
+                '[save-excel-file] original first cell not found; skipped applying original title styles'
+              )
+            }
+          }
+        } else {
+          console.log(
+            '[save-excel-file] skipping merge/center/clear because first cell contains "No. (غير قابل للتعديل)"'
+          )
+          // Keep the first row as-is without merging or centering
         }
 
         // Apply RTL to worksheet
