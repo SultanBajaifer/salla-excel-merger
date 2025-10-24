@@ -11,11 +11,8 @@ const PriceConfigForm: React.FC = () => {
   // Update the store values when percentages change
   const handlePercent1Change = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const raw = e.target.value
-    console.log('Raw input for percent1:', raw)
     const parsed = raw === '' ? NaN : parseFloat(raw)
-    console.log('Parsed value for percent1:', parsed)
     const percentValue = isNaN(parsed) ? 0 : parsed
-    console.log('Final percent value for percent1:', percentValue)
     setPercent1(percentValue)
     // Convert percentage to multiplier (30 → 1.3)
     setRatio1(1 + percentValue / 100)
