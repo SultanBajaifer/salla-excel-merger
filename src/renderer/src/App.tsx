@@ -5,7 +5,6 @@ import PreviewTable from './components/PreviewTable'
 import ColumnMapper from './components/ColumnMapper'
 import SaveButton from './components/SaveButton'
 import CleaningPage from './components/CleaningPage'
-import FormattingOptions from './components/FormattingOptions'
 
 function App(): React.JSX.Element {
   const {
@@ -17,8 +16,6 @@ function App(): React.JSX.Element {
     mergedPreviewData,
     mainFileHeaderRow,
     productsFileHeaderRow,
-    clearFormattingFromRow,
-    preserveFirstRowFormatting,
     setCurrentView,
     setMainFilePath,
     setNewProductsFilePath,
@@ -97,15 +94,14 @@ function App(): React.JSX.Element {
 
       const outputPath = await window.api.saveFile(defaultPath)
       if (outputPath) {
-        // Pass formatting options to control which rows preserve formatting
+        // Pass the number of rows from main file and header row index
+        // So we know which rows to preserve formatting for (only title and header rows)
         await window.api.saveExcelFile(
           outputPath,
           mergedPreviewData,
           mainFilePath,
           mainFileData.length,
-          mainFileHeaderRow || 1,
-          clearFormattingFromRow,
-          preserveFirstRowFormatting
+          mainFileHeaderRow || 1
         )
         alert('تم حفظ الملف بنجاح')
         setCurrentView('main')
@@ -220,13 +216,6 @@ function App(): React.JSX.Element {
               )}
             </div>
           </div>
-
-          {/* Formatting Options */}
-          {mainFileData.length > 0 && (
-            <div className="mb-6">
-              <FormattingOptions />
-            </div>
-          )}
 
           <div className="flex justify-center">
             <button

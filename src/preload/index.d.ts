@@ -9,9 +9,7 @@ interface API {
     data: unknown[][],
     mainFilePath: string,
     mainFileRowCount: number,
-    headerRowIndex: number,
-    clearFormattingFromRow: number | null,
-    preserveFirstRowFormatting: boolean
+    headerRowIndex: number
   ) => Promise<void>
   cleanExcelFile: (filePath: string) => Promise<string>
 }

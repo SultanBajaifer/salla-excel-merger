@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
 import { execFile } from 'child_process'
@@ -8,7 +9,12 @@ import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
 
-function createWindow(): void {
+// Configure auto-updater
+autoUpdater.logger = console
+autoUpdater.autoDownload = false // Don't auto-download, ask user first
+autoUpdater.autoInstallOnAppQuit = true
+
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -39,6 +45,74 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
+}
+
+// Auto-updater event handlers
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for update...')
+})
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث متوفر',
+      message: `تحديث جديد متاح (${info.version})`,
+      detail: 'هل تريد تحميل التحديث الآن؟',
+      buttons: ['نعم', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate()
+      }
+    })
+})
+
+autoUpdater.on('update-not-available', () => {
+  console.log('Update not available.')
+})
+
+autoUpdater.on('error', (err) => {
+  console.error('Error in auto-updater:', err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = `Download speed: ${progressObj.bytesPerSecond}`
+  log_message = log_message + ` - Downloaded ${progressObj.percent}%`
+  log_message = log_message + ` (${progressObj.transferred}/${progressObj.total})`
+  console.log(log_message)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded:', info)
+  dialog
+    .showMessageBox({
+      type: 'info',
+      title: 'تحديث جاهز',
+      message: 'تم تحميل التحديث بنجاح',
+      detail: 'سيتم تثبيت التحديث عند إعادة تشغيل التطبيق. هل تريد إعادة التشغيل الآن؟',
+      buttons: ['إعادة التشغيل', 'لاحقاً']
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall()
+      }
+    })
+})
+
+function checkForUpdates(): void {
+  // Don't check for updates in development
+  if (is.dev) {
+    console.log('Skipping update check in development mode')
+    return
+  }
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    console.error('Failed to check for updates:', err)
+  })
 }
 
 // This method will be called when Electron has finished
@@ -165,18 +239,14 @@ app.whenReady().then(() => {
       data: unknown[][],
       mainFilePath: string,
       mainFileRowCount: number,
-      headerRowIndex: number,
-      clearFormattingFromRow: number | null,
-      preserveFirstRowFormatting: boolean
+      headerRowIndex: number
     ) => {
       console.log('[save-excel-file] invoked', {
         filePath,
         mainFilePath,
         rows: data?.length ?? 0,
         mainFileRows: mainFileRowCount,
-        headerRow: headerRowIndex,
-        clearFrom: clearFormattingFromRow,
-        preserveFirst: preserveFirstRowFormatting
+        headerRow: headerRowIndex
       })
       try {
         // Try to read the original main file to preserve formatting; if it fails or has no sheets, proceed without template
@@ -238,47 +308,23 @@ app.whenReady().then(() => {
 
         // Add all data rows
         console.log('[save-excel-file] writing rows to worksheet')
-        console.log(
-          '[save-excel-file] formatting options:',
-          'clearFromRow=',
-          clearFormattingFromRow,
-          'preserveFirst=',
-          preserveFirstRowFormatting
-        )
 
-        const originalRowCount = originalWorksheet?.rowCount || 0
+        // Preserve formatting for ALL rows from the original main file (up to mainFileRowCount)
+        // This includes all rows above the header, the header row itself, and original data rows
+        // New product rows (after mainFileRowCount) will have clean/default formatting
+        console.log(
+          '[save-excel-file] will preserve formatting for first',
+          mainFileRowCount,
+          'rows (all original file rows)'
+        )
 
         data.forEach((row, rowIndex) => {
           const newRow = worksheet.addRow(row)
 
-          // Determine if we should preserve formatting for this row
-          let shouldPreserveFormatting = false
-
-          if (originalWorksheet && rowIndex < originalRowCount) {
-            // Check formatting options
-            if (clearFormattingFromRow === null) {
-              // No clearing configured - preserve all formatting from original rows
-              shouldPreserveFormatting = true
-            } else {
-              // User configured clearing from a specific row (1-based)
-              const clearFromIndex = clearFormattingFromRow - 1 // Convert to 0-based
-
-              if (rowIndex < clearFromIndex) {
-                // Before the clear line - preserve formatting
-                shouldPreserveFormatting = true
-              } else if (rowIndex === 0 && preserveFirstRowFormatting) {
-                // First row and user wants to preserve it
-                shouldPreserveFormatting = true
-              } else {
-                // After clear line - don't preserve formatting
-                shouldPreserveFormatting = false
-              }
-            }
-          }
-
-          // Apply formatting if needed
-          if (shouldPreserveFormatting) {
-            const originalRow = originalWorksheet!.getRow(rowIndex + 1)
+          // Copy formatting for all rows that came from the original main file
+          // This preserves the original file's appearance for all its rows
+          if (originalWorksheet && rowIndex < mainFileRowCount) {
+            const originalRow = originalWorksheet.getRow(rowIndex + 1)
             if (originalRow && originalRow.hasValues) {
               // Copy row height
               newRow.height = originalRow.height
@@ -315,16 +361,11 @@ app.whenReady().then(() => {
               })
             }
           }
+          // New product rows (rowIndex >= mainFileRowCount) automatically get clean/default formatting
 
           // Log the first few rows for debugging
           if (rowIndex < 3) {
-            console.debug(
-              '[save-excel-file] row',
-              rowIndex,
-              row,
-              'preserveFormat=',
-              shouldPreserveFormatting
-            )
+            console.debug('[save-excel-file] row', rowIndex, row)
           }
         })
 
@@ -437,6 +478,11 @@ app.whenReady().then(() => {
   )
 
   createWindow()
+
+  // Check for updates after a short delay to let the app initialize
+  setTimeout(() => {
+    checkForUpdates()
+  }, 3000)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
