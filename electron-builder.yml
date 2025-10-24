@@ -47,5 +47,5 @@ publish:
   provider: github
   owner: SultanBajaifer
   repo: salla-excel-merger
-  releaseType: release
+  releaseType: draft
   token: $GH_TOKEN
