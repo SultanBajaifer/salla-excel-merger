@@ -213,7 +213,8 @@ app.whenReady().then(() => {
       console.log('[clean-excel-file] Cleaning file:', filePath)
 
       // Execute the Python script
-      const { stdout, stderr } = await execFileAsync('python3', [scriptPath, filePath])
+      const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+      const { stdout, stderr } = await execFileAsync(pythonCmd, [scriptPath, filePath])
 
       if (stderr) {
         console.warn('[clean-excel-file] Python stderr:', stderr)
