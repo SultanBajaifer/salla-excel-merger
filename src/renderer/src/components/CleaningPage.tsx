@@ -41,14 +41,30 @@ const CleaningPage: React.FC = () => {
       // Clean the file using the main process
       const cleanedPath = (await window.api.cleanExcelFile(cleaningFilePath)) as string
 
-      // Read the cleaned file data
-      const data = (await window.api.readExcelFile(cleanedPath)) as CellValue[][]
+      if (!cleanedPath) {
+        throw new Error('لم يتم إنشاء الملف المنظف')
+      }
 
-      setCleanedFilePath(cleanedPath)
-      setCleaningFileData(data)
+      // Verify the cleaned file exists
+      try {
+        // Read the cleaned file data
+        const data = (await window.api.readExcelFile(cleanedPath)) as CellValue[][]
+
+        if (!data || !data.length) {
+          throw new Error('الملف المنظف فارغ')
+        }
+
+        setCleanedFilePath(cleanedPath)
+        setCleaningFileData(data)
+      } catch (readError) {
+        console.error('خطأ في قراءة الملف المنظف:', readError)
+        throw new Error('تم تنظيف الملف ولكن حدث خطأ في قراءته')
+      }
     } catch (error) {
       console.error('خطأ في تنظيف الملف:', error)
-      alert('حدث خطأ أثناء تنظيف الملف')
+      alert(
+        'حدث خطأ أثناء تنظيف الملف: ' + (error instanceof Error ? error.message : 'خطأ غير معروف')
+      )
     } finally {
       setIsLoading(false)
     }

@@ -10,6 +10,23 @@ This script cleans Excel files by:
 import pandas as pd
 import sys
 import os
+import io
+import locale
+
+# Set UTF-8 encoding for stdout
+if sys.stdout.encoding != 'UTF-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.stderr.encoding != 'UTF-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+# Set locale to handle Arabic characters
+try:
+    locale.setlocale(locale.LC_ALL, 'ar_SA.UTF-8')
+except:
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    except:
+        pass
 
 
 def clean_excel(file_path):
@@ -66,12 +83,24 @@ def clean_excel(file_path):
         df.to_excel(cleaned_path, index=False, engine='openpyxl')
         
         # Print the path to stdout (will be captured by Node.js)
-        print(cleaned_path)
+        # Encode the path as UTF-8 and handle any encoding errors
+        try:
+            print(cleaned_path.encode('utf-8').decode('utf-8'))
+        except UnicodeEncodeError:
+            # If encoding fails, use the path without problematic characters
+            safe_path = ''.join(c for c in cleaned_path if ord(c) < 128)
+            print(safe_path)
         
         return cleaned_path
         
     except Exception as e:
-        print(f"Error cleaning Excel file: {str(e)}", file=sys.stderr)
+        # Handle encoding errors in the error message
+        try:
+            error_msg = str(e)
+            print(f"Error cleaning Excel file: {error_msg}".encode('utf-8').decode('utf-8'), 
+                  file=sys.stderr)
+        except UnicodeEncodeError:
+            print("Error cleaning Excel file: Unicode encoding error", file=sys.stderr)
         sys.exit(1)
 
 
