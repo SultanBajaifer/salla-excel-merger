@@ -13,24 +13,36 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v4
+      - name: Install Node.js and NPM
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "npm"
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
           cache: "pip"
+          cache-dependency-path: "**/requirements.txt"
 
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Bundle Python scripts
+        run: |
+          pyinstaller --onefile --distpath ./resources/python ./scripts/clean_excel.py
+
+      - name: Install Node dependencies
+        run: npm ci
 
       - name: Create .env file
         run: |
           echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+          echo "VITE_REACT_APP_ENV_VALUE=production" >> .env
           type .env
 
       - name: Build/release Electron app

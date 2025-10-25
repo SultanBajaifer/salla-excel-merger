@@ -16,6 +16,13 @@ release
 out
 *.local
 
+# Python build artifacts
+__pycache__/
+*.py[cod]
+build/
+*.spec
+resources/python/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,6 +36,8 @@ out
 
 # Environment variables
 .env
+.env.local
+.env.*
 
 # Build artifacts
 *.tgz

@@ -6,8 +6,20 @@ import icon from '../../resources/icon.png?asset'
 import ExcelJS from 'exceljs'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { existsSync } from 'fs'
 
 const execFileAsync = promisify(execFile)
+
+// Get the path to the Python script/executable
+const getPythonScriptPath = (): string => {
+  const isDev = import.meta.env.DEV
+  if (isDev) {
+    return join(__dirname, '../../scripts/clean_excel.py')
+  }
+  // In production, use the bundled executable
+  const extension = process.platform === 'win32' ? '.exe' : ''
+  return join(process.resourcesPath, 'python', `clean_excel${extension}`)
+}
 
 // Configure auto-updater
 autoUpdater.logger = console
@@ -40,8 +52,8 @@ function createWindow(): BrowserWindow {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (is.dev && import.meta.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(import.meta.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -202,19 +214,37 @@ app.whenReady().then(() => {
   // Clean Excel file handler using Python script
   ipcMain.handle('clean-excel-file', async (_, filePath: string) => {
     try {
-      // Determine the path to the Python script
-      // In production, resources are in the resources folder
-      // In development, we use the source location
-      const scriptPath = is.dev
-        ? join(__dirname, '../../scripts/clean_excel.py')
-        : join(process.resourcesPath, 'scripts', 'clean_excel.py')
+      const pythonPath = getPythonScriptPath()
+      const isDev = process.env.NODE_ENV === 'development'
 
-      console.log('[clean-excel-file] Using Python script at:', scriptPath)
+      console.log('[clean-excel-file] Environment:', {
+        isDev,
+        processResourcePath: process.resourcesPath,
+        execPath: process.execPath,
+        cwd: process.cwd(),
+        pythonPath
+      })
+      console.log('[clean-excel-file] Using Python script at:', pythonPath)
       console.log('[clean-excel-file] Cleaning file:', filePath)
+      
+      // Check if Python executable exists
+      const exists = existsSync(pythonPath)
+      console.log('[clean-excel-file] Python executable exists:', exists)
+      
+      let stdout: string, stderr: string
 
-      // Execute the Python script
-      const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
-      const { stdout, stderr } = await execFileAsync(pythonCmd, [scriptPath, filePath])
+      if (isDev) {
+        // In development, run the Python script directly
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+        const result = await execFileAsync(pythonCmd, [pythonPath, filePath])
+        stdout = result.stdout
+        stderr = result.stderr
+      } else {
+        // In production, run the bundled executable
+        const result = await execFileAsync(pythonPath, [filePath])
+        stdout = result.stdout
+        stderr = result.stderr
+      }
 
       if (stderr) {
         console.warn('[clean-excel-file] Python stderr:', stderr)
