@@ -211,4 +211,5 @@ salla-excel-merger/
 2- git add .
 3- git commit -m "chore(release): v${tag}"           
 git tag v${tag}                                         
-4-git push origin maingit push origin --tags
+4-git push origin main
+git push origin --tags
