@@ -204,3 +204,11 @@ salla-excel-merger/
 - [ESLint Extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 - [Prettier Extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 - [TailwindCSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
+
+
+### push release
+1- make change on version in pacakge.json
+2- git add .
+3- git commit -m "chore(release): v${tag}"           
+git tag v${tag}                                         
+4-git push origin maingit push origin --tags
