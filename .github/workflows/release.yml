@@ -40,10 +40,14 @@ jobs:
         run: npm ci
 
       - name: Create .env file
+        shell: bash
         run: |
           echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
-          echo "VITE_REACT_APP_ENV_VALUE=production" >> .env
-          type .env
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            type .env
+          else
+            cat .env
+          fi
 
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
