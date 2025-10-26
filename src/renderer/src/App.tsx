@@ -5,6 +5,7 @@ import PreviewTable from './components/PreviewTable'
 import ColumnMapper from './components/ColumnMapper'
 import SaveButton from './components/SaveButton'
 import CleaningPage from './components/CleaningPage'
+import BrandExtractionPage from './components/BrandExtractionPage'
 
 function App(): React.JSX.Element {
   const {
@@ -130,6 +131,19 @@ function App(): React.JSX.Element {
             </button>
             <p className="text-xs text-gray-500 mt-2">
               هل لديك ملف إكسل يحتاج إلى تنظيف قبل المعالجة؟ استخدم هذه الأداة لتنظيفه تلقائيًا
+            </p>
+          </div>
+
+          {/* Navigation to Brand Extraction Page */}
+          <div className="mb-6">
+            <button
+              onClick={() => setCurrentView('brand-extraction')}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg text-lg font-semibold"
+            >
+              استخراج المنتجات حسب العلامة التجارية
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              اكتشف العلامات التجارية في ملف الإكسل واستخرج المنتجات حسب العلامة المختارة
             </p>
           </div>
 
@@ -271,6 +285,11 @@ function App(): React.JSX.Element {
   // Cleaning View
   if (currentView === 'cleaning') {
     return <CleaningPage />
+  }
+
+  // Brand Extraction View
+  if (currentView === 'brand-extraction') {
+    return <BrandExtractionPage />
   }
 
   return <div>عرض غير معروف</div>
