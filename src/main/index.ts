@@ -11,14 +11,14 @@ import { existsSync } from 'fs'
 const execFileAsync = promisify(execFile)
 
 // Get the path to the Python script/executable
-const getPythonScriptPath = (): string => {
+const getPythonScriptPath = (scriptName: string): string => {
   const isDev = import.meta.env.DEV
   if (isDev) {
-    return join(__dirname, '../../scripts/clean_excel.py')
+    return join(__dirname, `../../scripts/${scriptName}.py`)
   }
   // In production, use the bundled executable
   const extension = process.platform === 'win32' ? '.exe' : ''
-  return join(process.resourcesPath, 'python', `clean_excel${extension}`)
+  return join(process.resourcesPath, 'python', `${scriptName}${extension}`)
 }
 
 // Configure auto-updater
@@ -214,7 +214,7 @@ app.whenReady().then(() => {
   // Clean Excel file handler using Python script
   ipcMain.handle('clean-excel-file', async (_, filePath: string) => {
     try {
-      const pythonPath = getPythonScriptPath()
+      const pythonPath = getPythonScriptPath('clean_excel')
       const isDev = process.env.NODE_ENV === 'development'
 
       console.log('[clean-excel-file] Environment:', {
@@ -226,11 +226,11 @@ app.whenReady().then(() => {
       })
       console.log('[clean-excel-file] Using Python script at:', pythonPath)
       console.log('[clean-excel-file] Cleaning file:', filePath)
-      
+
       // Check if Python executable exists
       const exists = existsSync(pythonPath)
       console.log('[clean-excel-file] Python executable exists:', exists)
-      
+
       let stdout: string, stderr: string
 
       if (isDev) {
@@ -257,6 +257,91 @@ app.whenReady().then(() => {
       return cleanedPath
     } catch (error) {
       console.error('[clean-excel-file] Error cleaning Excel file:', error)
+      throw error
+    }
+  })
+
+  // Detect brands from Excel file
+  ipcMain.handle('detect-brands', async (_, filePath: string) => {
+    try {
+      const pythonPath = getPythonScriptPath('extract_brands')
+      const isDev = process.env.NODE_ENV === 'development'
+
+      console.log('[detect-brands] Using Python script at:', pythonPath)
+      console.log('[detect-brands] Detecting brands in file:', filePath)
+
+      let stdout: string, stderr: string
+
+      if (isDev) {
+        // In development, run the Python script directly
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+        const result = await execFileAsync(pythonCmd, [pythonPath, 'detect', filePath])
+        stdout = result.stdout
+        stderr = result.stderr
+      } else {
+        // In production, run the bundled executable
+        const result = await execFileAsync(pythonPath, ['detect', filePath])
+        stdout = result.stdout
+        stderr = result.stderr
+      }
+
+      if (stderr) {
+        console.warn('[detect-brands] Python stderr:', stderr)
+      }
+
+      // Parse the JSON response from the Python script
+      const result = JSON.parse(stdout.trim())
+      console.log('[detect-brands] Detected brands:', result)
+
+      return result
+    } catch (error) {
+      console.error('[detect-brands] Error detecting brands:', error)
+      throw error
+    }
+  })
+
+  // Extract products by selected brands
+  ipcMain.handle('extract-by-brands', async (_, filePath: string, selectedBrands: string[]) => {
+    try {
+      const pythonPath = getPythonScriptPath('extract_brands')
+      const isDev = process.env.NODE_ENV === 'development'
+
+      console.log('[extract-by-brands] Using Python script at:', pythonPath)
+      console.log('[extract-by-brands] Extracting products for brands:', selectedBrands)
+      console.log('[extract-by-brands] From file:', filePath)
+
+      const brandsJson = JSON.stringify(selectedBrands)
+
+      let stdout: string, stderr: string
+
+      if (isDev) {
+        // In development, run the Python script directly
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+        const result = await execFileAsync(pythonCmd, [pythonPath, 'extract', filePath, brandsJson])
+        stdout = result.stdout
+        stderr = result.stderr
+      } else {
+        // In production, run the bundled executable
+        const result = await execFileAsync(pythonPath, ['extract', filePath, brandsJson])
+        stdout = result.stdout
+        stderr = result.stderr
+      }
+
+      if (stderr) {
+        console.warn('[extract-by-brands] Python stderr:', stderr)
+      }
+
+      // Parse the JSON response from the Python script
+      const result = JSON.parse(stdout.trim())
+      console.log('[extract-by-brands] Extraction result:', result)
+
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
+      return result
+    } catch (error) {
+      console.error('[extract-by-brands] Error extracting by brands:', error)
       throw error
     }
   })

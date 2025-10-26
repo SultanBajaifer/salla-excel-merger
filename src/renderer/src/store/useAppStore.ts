@@ -23,7 +23,7 @@ interface AppState {
   newProductsData: CellValue[][]
   columnMappings: ColumnMapping[]
   mergedPreviewData: CellValue[][]
-  currentView: 'main' | 'mapper' | 'preview' | 'cleaning'
+  currentView: 'main' | 'mapper' | 'preview' | 'cleaning' | 'brand-extraction'
 
   // Header row indices (1-based, e.g., 1 means row 1 is the header)
   mainFileHeaderRow: number | null
@@ -45,13 +45,19 @@ interface AppState {
   cleaningFileData: CellValue[][]
   cleanedFilePath: string | null
 
+  // Brand extraction state
+  brandExtractionFilePath: string | null
+  detectedBrands: Array<{ name: string; count: number }>
+  selectedBrands: string[]
+  extractedFilePath: string | null
+
   setMainFilePath: (path: string | null) => void
   setNewProductsFilePath: (path: string | null) => void
   setMainFileData: (data: CellValue[][]) => void
   setNewProductsData: (data: CellValue[][]) => void
   setColumnMappings: (mappings: ColumnMapping[]) => void
   setMergedPreviewData: (data: CellValue[][]) => void
-  setCurrentView: (view: 'main' | 'mapper' | 'preview' | 'cleaning') => void
+  setCurrentView: (view: 'main' | 'mapper' | 'preview' | 'cleaning' | 'brand-extraction') => void
   setMainFileHeaderRow: (row: number | null) => void
   setProductsFileHeaderRow: (row: number | null) => void
   setProductsStartRow: (row: number) => void
@@ -61,6 +67,10 @@ interface AppState {
   setCleaningFilePath: (path: string | null) => void
   setCleaningFileData: (data: CellValue[][]) => void
   setCleanedFilePath: (path: string | null) => void
+  setBrandExtractionFilePath: (path: string | null) => void
+  setDetectedBrands: (brands: Array<{ name: string; count: number }>) => void
+  setSelectedBrands: (brands: string[]) => void
+  setExtractedFilePath: (path: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -80,6 +90,10 @@ export const useAppStore = create<AppState>((set) => ({
   cleaningFilePath: null,
   cleaningFileData: [],
   cleanedFilePath: null,
+  brandExtractionFilePath: null,
+  detectedBrands: [],
+  selectedBrands: [],
+  extractedFilePath: null,
 
   setMainFilePath: (path) => set({ mainFilePath: path }),
   setNewProductsFilePath: (path) => set({ newProductsFilePath: path }),
@@ -96,7 +110,11 @@ export const useAppStore = create<AppState>((set) => ({
   setCostColumn: (column) => set({ costColumn: column }),
   setCleaningFilePath: (path) => set({ cleaningFilePath: path }),
   setCleaningFileData: (data) => set({ cleaningFileData: data }),
-  setCleanedFilePath: (path) => set({ cleanedFilePath: path })
+  setCleanedFilePath: (path) => set({ cleanedFilePath: path }),
+  setBrandExtractionFilePath: (path) => set({ brandExtractionFilePath: path }),
+  setDetectedBrands: (brands) => set({ detectedBrands: brands }),
+  setSelectedBrands: (brands) => set({ selectedBrands: brands }),
+  setExtractedFilePath: (path) => set({ extractedFilePath: path })
 }))
 
 export type { CellValue, ColumnConfig, ColumnCategory }
