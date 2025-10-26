@@ -21,7 +21,10 @@ const api = {
       mainFileRowCount,
       headerRowIndex
     ),
-  cleanExcelFile: (filePath: string) => ipcRenderer.invoke('clean-excel-file', filePath)
+  cleanExcelFile: (filePath: string) => ipcRenderer.invoke('clean-excel-file', filePath),
+  detectBrands: (filePath: string) => ipcRenderer.invoke('detect-brands', filePath),
+  extractByBrands: (filePath: string, selectedBrands: string[]) =>
+    ipcRenderer.invoke('extract-by-brands', filePath, selectedBrands)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

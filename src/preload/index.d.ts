@@ -12,6 +12,8 @@ interface API {
     headerRowIndex: number
   ) => Promise<void>
   cleanExcelFile: (filePath: string) => Promise<string>
+  detectBrands: (filePath: string) => Promise<unknown>
+  extractByBrands: (filePath: string, selectedBrands: string[]) => Promise<unknown>
 }
 
 declare global {
