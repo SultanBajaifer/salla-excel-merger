@@ -25,10 +25,10 @@ if sys.stderr.encoding != 'UTF-8':
 # Set locale to handle Arabic characters
 try:
     locale.setlocale(locale.LC_ALL, 'ar_SA.UTF-8')
-except:
+except locale.Error:
     try:
         locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    except:
+    except locale.Error:
         pass
 
 
@@ -154,10 +154,10 @@ def extract_by_brands(file_path, selected_brands, product_column_name='المن�
         def contains_brand(product_name):
             if pd.isna(product_name):
                 return False
-            product_str = str(product_name)
+            product_str_lower = str(product_name).lower()
             for brand in selected_brands:
                 # Case-insensitive search for the brand in the product name
-                if brand in product_str or brand.lower() in product_str.lower():
+                if brand.lower() in product_str_lower:
                     return True
             return False
         
