@@ -55,14 +55,8 @@ npm run dev
 بناء التطبيق للإنتاج:
 
 ```bash
-# لنظام Windows
+# لنظام Windows (المنصة الوحيدة المدعومة للإصدارات)
 npm run build:win
-
-# لنظام macOS
-npm run build:mac
-
-# لنظام Linux
-npm run build:linux
 ```
 
 ### أوامر أخرى
@@ -74,6 +68,9 @@ npm run typecheck
 # فحص الكود
 npm run lint
 
+# تشغيل الاختبارات
+npm test
+
 # تنسيق الكود
 npm run format
 ```
@@ -84,7 +81,13 @@ npm run format
 salla-excel-merger/
 ├── src/
 │   ├── main/                    # عملية Electron الرئيسية
-│   │   └── index.ts            # معالجات IPC وقراءة/كتابة/تنظيف Excel
+│   │   ├── index.ts            # دورة حياة التطبيق وتسجيل المعالجات
+│   │   ├── window.ts           # إنشاء النافذة
+│   │   ├── updater.ts          # التحديث الإلزامي
+│   │   ├── logger.ts           # سجل الأخطاء (electron-log)
+│   │   ├── license/            # التحقق من مفتاح الترخيص ومعرف الجهاز
+│   │   └── ipc/                # معالجات IPC (الحوارات، Excel، Python، الترخيص)
+│   ├── shared/                  # أنواع وثوابت مشتركة بين العمليات
 │   ├── preload/                 # سكريبتات Preload
 │   │   ├── index.ts            # تعريف APIs
 │   │   └── index.d.ts          # TypeScript definitions
@@ -95,6 +98,9 @@ salla-excel-merger/
 │           ├── main.tsx         # نقطة دخول React
 │           ├── index.css        # الأنماط العامة مع RTL
 │           ├── components/      # مكونات React
+│           │   ├── AccessGate.tsx         # بوابة الترخيص والتحديث الإلزامي
+│           │   ├── LicenseModal.tsx       # شاشة التفعيل
+│           │   ├── UpdateModal.tsx        # شاشة التحديث الإلزامي
 │           │   ├── FileSelector.tsx       # مكون اختيار الملفات
 │           │   ├── ColumnMapper.tsx       # أداة مطابقة الأعمدة
 │           │   ├── PreviewTable.tsx       # جدول معاينة البيانات
@@ -105,6 +111,11 @@ salla-excel-merger/
 │           │   └── excelCleaner.ts       # منطق تنظيف ملفات Excel
 │           └── store/           # إدارة الحالة
 │               └── useAppStore.ts        # Zustand store
+├── scripts/
+│   ├── clean_excel.py           # تنظيف ملفات Excel
+│   ├── extract_brands.py        # استخراج المنتجات حسب العلامة التجارية
+│   └── license/                 # أدوات إصدار مفاتيح الترخيص (تُشغَّل على جهاز المطور فقط)
+├── docs/                        # التوثيق
 ├── electron.vite.config.ts      # إعدادات Vite
 ├── electron-builder.yml         # إعدادات Electron builder
 └── package.json
@@ -226,11 +237,20 @@ salla-excel-merger/
 - [Prettier Extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 - [TailwindCSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
 
+## 🔐 الترخيص والتحديثات
 
-### push release
-1- make change on version in pacakge.json
-2- git add .
-3- git commit -m "chore(release): v${tag}"           
-git tag v${tag}                                         
-4-git push origin main
-git push origin --tags
+- **التحديثات إلزامية**: عند توفر إصدار جديد يتم تحميله وتثبيته تلقائيًا ولا يمكن تخطيه. التفاصيل في [docs/AUTO_UPDATE_SETUP.md](docs/AUTO_UPDATE_SETUP.md).
+- **مفتاح الترخيص**: كل نسخة تحتاج مفتاحًا مرتبطًا بجهاز واحد. طريقة إنشاء المفاتيح وإصدارها في [docs/LICENSING.md](docs/LICENSING.md).
+
+## 🚀 نشر إصدار جديد
+
+```bash
+# 1. عدّل رقم الإصدار في package.json (مثلاً 2.0.1)
+git add .
+git commit -m "chore(release): v2.0.1"
+git tag v2.0.1
+git push origin main
+git push origin v2.0.1
+```
+
+دفع الوسم (tag) يشغّل GitHub Actions الذي يبني مثبّت Windows وينشره في GitHub Releases، ومنه يصل التحديث لجميع المستخدمين.

@@ -1,17 +1,8 @@
 {
   "name": "salla-excel-merger",
-  "version": "1.1.6",
-  "description": "An Electron application with React and TypeScript",
+  "version": "2.0.0",
+  "description": "Salla Excel Merger — desktop app for merging, cleaning and filtering Salla product sheets",
   "main": "./out/main/index.js",
-  "build": {
-    "extraResources": [
-      {
-        "from": "resources/python",
-        "to": "python",
-        "filter": ["**/*"]
-      }
-    ]
-  },
   "author": "example.com",
   "homepage": "https://electron-vite.org",
   "scripts": {
@@ -20,19 +11,23 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "license:keygen": "tsx scripts/license/keygen.ts",
+    "license:issue": "tsx scripts/license/issue-key.ts",
+    "license:check": "tsx scripts/license/check.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "concurrently": "^9.2.1",
+    "electron-log": "^5.4.4",
     "electron-updater": "^6.3.9",
     "exceljs": "^4.4.0",
     "zustand": "^5.0.8"
@@ -59,7 +54,9 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "^4.1.15",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2",
-    "vite": "^7.1.6"
+    "vite": "^7.1.6",
+    "vitest": "^3.2.7"
   }
 }

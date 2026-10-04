@@ -8,13 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    strategy:
-      matrix:
-        os: [windows-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -23,36 +17,44 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install Node dependencies
-        run: npm ci
+          node-version: '20'
+          cache: 'npm'
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements.txt'
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Bundle Python scripts
+        run: |
+          pyinstaller --onefile --distpath ./resources/python ./scripts/clean_excel.py
+          pyinstaller --onefile --distpath ./resources/python ./scripts/extract_brands.py
+
+      - name: Install Node dependencies
+        run: npm ci
 
       - name: Run linter
         run: npm run lint
 
-      - name: Build application
-        run: npm run build
+      - name: Run tests
+        run: npm test
 
+      # build:win also runs the typecheck; --publish never keeps PR builds off GitHub Releases.
       - name: Build distributable (Windows)
-        if: matrix.os == 'windows-latest'
-        run: npm run build:win
+        run: npm run build:win -- --publish never
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-dev-build
+          name: windows-dev-build
           path: |
             dist/*.exe
           if-no-files-found: ignore
